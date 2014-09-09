@@ -1,4 +1,4 @@
-# haskellSDL2
+# Haskell SDL2 Examples
 
 A port of LazyFoo's excellent SDL tutorials into Haskell, updated for SDL2
 
@@ -16,11 +16,11 @@ These instructions will only work if you have SDL2 and SDL2Image on your system;
 
     cd lazyfoo
     cabal sandbox init --sandbox=sandbox
-    cabal install ../hlibs/sdl2 ../hlibs/sdl2-image 
+    cabal install ../hlibs/sdl2 ../hlibs/sdl2-image
 
 ## Running Examples
 
-All lessons can be executed through cabal
+All examples can be executed through cabal
 
     cabal run lessonxx
     (where xx is the lesson number as two digits)
@@ -28,3 +28,7 @@ All lessons can be executed through cabal
 To run the first lesson (a simple hello world),
 
     cabal run lesson01
+
+## Lesson Output
+
+* Lesson 01 - a white box which remains for two seconds

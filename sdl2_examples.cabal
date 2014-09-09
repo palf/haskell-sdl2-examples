@@ -1,0 +1,14 @@
+name:                sdl2examples
+version:             0.1.0.0
+author:              Jack Palfrey
+maintainer:          jack.palf@gmail.com
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable lesson01
+  main-is:             lesson01.hs
+  build-depends:       base >=4.6 && <4.7,
+                       sdl2
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
