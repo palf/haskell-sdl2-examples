@@ -34,3 +34,4 @@ To run the first lesson,
 * Lesson 01 - a white box which remains for two seconds
 * Lesson 02 - "Hello World" text taken from a bitmap (remains for 2 seconds)
 * Lesson 03 - a window with instructions to close it (remains until closed)
+* Lesson 04 - instructions to press arrow keys, followed by content changing on key press
