@@ -33,3 +33,9 @@ executable lesson04
   hs-source-dirs:      src
   default-language:    Haskell2010
 
+executable lesson05
+  main-is:             lesson05.hs
+  build-depends:       base >=4.6 && <4.7,
+                       sdl2
+  hs-source-dirs:      src
+  default-language:    Haskell2010
