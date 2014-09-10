@@ -25,10 +25,11 @@ All examples can be executed through cabal
     cabal run lessonxx
     (where xx is the lesson number as two digits)
 
-To run the first lesson (a simple hello world),
+To run the first lesson,
 
     cabal run lesson01
 
 ## Lesson Output
 
 * Lesson 01 - a white box which remains for two seconds
+* Lesson 02 - "Hello World" text taken from a bitmap
