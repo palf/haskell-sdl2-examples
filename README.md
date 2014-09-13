@@ -36,3 +36,4 @@ To run the first lesson,
 * Lesson 03 - a window with instructions to close it (remains until closed)
 * Lesson 04 - instructions to press arrow keys, followed by content changing on key press
 * Lesson 05 - a stretched image in the window
+* Lesson 06 - a 'png loaded' message, loaded from a png
