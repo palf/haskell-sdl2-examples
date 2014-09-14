@@ -37,3 +37,4 @@ To run the first lesson,
 * Lesson 04 - instructions to press arrow keys, followed by content changing on key press
 * Lesson 05 - a stretched image in the window
 * Lesson 06 - a 'png loaded' message, loaded from a png
+* Lesson 07 - a 'rendering texture' message

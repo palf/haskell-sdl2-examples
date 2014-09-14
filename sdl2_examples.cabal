@@ -58,3 +58,13 @@ executable lesson06
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind
+
+
+executable lesson07
+  main-is:             lesson07.hs
+  build-depends:       base >=4.6 && <4.7,
+                       sdl2,
+                       sdl2-image
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:         -Wall -fno-warn-unused-do-bind
