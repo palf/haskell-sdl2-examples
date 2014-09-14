@@ -38,3 +38,4 @@ To run the first lesson,
 * Lesson 05 - a stretched image in the window
 * Lesson 06 - a 'png loaded' message, loaded from a png
 * Lesson 07 - a 'rendering texture' message
+* Lesson 08 - a red box with a green outline, a blue strikethrough and yellow vertical dots
