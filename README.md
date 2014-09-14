@@ -39,3 +39,4 @@ To run the first lesson,
 * Lesson 06 - a 'png loaded' message, loaded from a png
 * Lesson 07 - a 'rendering texture' message
 * Lesson 08 - a red box with a green outline, a blue strikethrough and yellow vertical dots
+* Lesson 09 - the text "Here's a viewport" in three different locations
