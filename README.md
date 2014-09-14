@@ -36,7 +36,8 @@ To run the first lesson,
 * Lesson 03 - a window with instructions to close it (remains until closed)
 * Lesson 04 - instructions to press arrow keys, followed by content changing on key press
 * Lesson 05 - a stretched image in the window
-* Lesson 06 - a 'png loaded' message, loaded from a png
-* Lesson 07 - a 'rendering texture' message
+* Lesson 06 - a "png loaded" message, loaded from a png (!)
+* Lesson 07 - a "rendering texture" message
 * Lesson 08 - a red box with a green outline, a blue strikethrough and yellow vertical dots
 * Lesson 09 - the text "Here's a viewport" in three different locations
+* Lesson 10 - a stick figure sitting on a hill
