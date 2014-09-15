@@ -41,3 +41,4 @@ To run the first lesson,
 * Lesson 08 - a red box with a green outline, a blue strikethrough and yellow vertical dots
 * Lesson 09 - the text "Here's a viewport" in three different locations
 * Lesson 10 - a stick figure sitting on a hill
+* Lesson 11 - a different coloured dot in each corner of the window
