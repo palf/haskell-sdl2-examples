@@ -1,8 +1,8 @@
 # Haskell SDL2 Examples
 
-A port of LazyFoo's excellent SDL tutorials into Haskell, updated for SDL2
+Some simple SDL2 examples in Haskell
 
-Check out the originals [here](http://lazyfoo.net/tutorials/SDL/index.php)
+Check out the inspiration [here](http://lazyfoo.net/tutorials/SDL/index.php)
 
 ## Setup
 
@@ -10,11 +10,13 @@ The following paths can be renamed to whatever you like; I don't get the package
 
 These instructions will only work if you have SDL2 and SDL2Image on your system; as this is platform-specific I'm not going to cover it - Google is your friend!
 
-    git clone https://github.com/palf/haskellSDL2Examples.git lazyfoo
+The library locations and folder names are just suggestions, put them wherever suits you.
+
+    git clone https://github.com/palf/haskellSDL2Examples.git your_folder_name
     git clone https://github.com/polarina/sdl2.git hlibs/sdl2
     git clone https://github.com/ods94065/sdl2-image.git hlibs/sdl2-image
 
-    cd lazyfoo
+    cd your_folder_name
     cabal sandbox init --sandbox=sandbox
     cabal install ../hlibs/sdl2 ../hlibs/sdl2-image
 
@@ -42,3 +44,4 @@ To run the first lesson,
 * Lesson 09 - the text "Here's a viewport" in three different locations
 * Lesson 10 - a stick figure sitting on a hill
 * Lesson 11 - a different coloured dot in each corner of the window
+* Lesson 12 - a coloured window that changes when pressing any of Q, W, E, A, S, D
