@@ -45,3 +45,4 @@ To run the first lesson,
 * Lesson 10 - a stick figure sitting on a hill
 * Lesson 11 - a different coloured dot in each corner of the window
 * Lesson 12 - a coloured window that changes when pressing any of Q, W, E, A, S, D
+* Lesson 13 - press 'w' and 's' to fade in or out the foreground
