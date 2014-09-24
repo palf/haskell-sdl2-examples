@@ -39,7 +39,7 @@ main = do
     initializeSDL [SDL.initFlagVideo] >>= catchRisky
     initializeSDLImage [Image.InitPNG] >>= catchRisky
 
-    setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
+    setHint "SDL_RENDER_SCALE_QUALITY" "0" >>= logWarning
     window <- createWindow lessonTitle >>= catchRisky
     renderer <- createRenderer window (-1) [SDL.rendererFlagAccelerated, SDL.rendererFlagPresentVSync] >>= catchRisky
 
@@ -69,14 +69,14 @@ fullWindow = toRect 0 0 screenWidth screenHeight
 
 drawState :: SDL.Renderer -> [Asset] -> World -> IO ()
 drawState renderer assets (World False frameValue) = withBlankScreen renderer $ do
-    let currentFrame = (frameValue `div` 4) `mod` 4
+    let currentFrame = (frameValue `div` 8) `mod` 8
     let (texture, _, _) = head assets
-    let spriteRect = getMask 0
+    let spriteRect = toRect 0 0 192 192 
 
     with2 (getMask currentFrame) (spriteRect `centredOn` fullWindow ) (SDL.renderCopy renderer texture)
 
     where getMask :: Int -> SDL.Rect
-          getMask x = toRect (x * 64) 0 64 205
+          getMask x = toRect (x * 48) 0 48 48
 
 drawState _ _ _ = return ()
 
