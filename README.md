@@ -18,7 +18,9 @@ The library locations and folder names are just suggestions, put them wherever s
 
     cd your_folder_name
     cabal sandbox init --sandbox=sandbox
-    cabal install ../hlibs/sdl2 ../hlibs/sdl2-image
+    cabal sandbox add-source ../hlibs/sdl2
+    cabal sandbox add-source ../hlibs/sdl2-image
+    cabal install --only-dependencies
 
 ## Running Examples
 
