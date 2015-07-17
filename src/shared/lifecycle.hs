@@ -1,6 +1,7 @@
 module Shared.Lifecycle (
   withSDL,
-  withWindow
+  withWindow,
+  throwSDLError
 ) where
 
 import qualified Graphics.UI.SDL as SDL
