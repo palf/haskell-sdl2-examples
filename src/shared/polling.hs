@@ -13,6 +13,11 @@ repeatUntil quitClause operation = do
     isQuitting <- quitClause
     unless isQuitting $ repeatUntil quitClause operation
 
+repeatUntilComplete :: IO Bool -> IO ()
+repeatUntilComplete operation = do
+    complete <- operation
+    unless complete $ repeatUntilComplete operation
+
 sdlQuit :: IO Bool
 sdlQuit = liftM isQuitEvent pollEvent
 

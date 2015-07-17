@@ -1,123 +1,50 @@
+{-# LANGUAGE RankNTypes #-}
+
 module Main where
 
 import qualified Graphics.UI.SDL as SDL
-import Control.Monad
-import Data.Bits
-import Foreign.C.String
-import Foreign.C.Types
-import Foreign.Marshal.Alloc
-import Foreign.Marshal.Utils
-import Foreign.Ptr
-import Foreign.Storable
-import GHC.Word
+import Shared.Assets
+import Shared.Input
+import Shared.Lifecycle
+import Shared.Polling
+import Shared.Utils
 
 
-type Risky a = Either String a
+title :: String
+title = "lesson04"
 
+size :: ScreenSize
+size = (640, 480)
 
-lessonTitle :: String
-lessonTitle = "lesson04"
+inWindow :: (SDL.Window -> IO ()) -> IO ()
+inWindow = withSDL . withWindow title size
 
-screenWidth :: CInt
-screenWidth = 640
+drawInWindow :: forall a. (RenderOperation -> IO a) -> IO ()
+drawInWindow drawFunc = inWindow $ \window -> do
+    screenSurface <- SDL.getWindowSurface window
+    drawFunc $ drawOn window screenSurface
+    SDL.freeSurface screenSurface
 
-screenHeight :: CInt
-screenHeight = 480
+surfacePaths :: [FilePath]
+surfacePaths = [
+    "./assets/press.bmp" ,
+    "./assets/up.bmp" ,
+    "./assets/down.bmp" ,
+    "./assets/left.bmp" ,
+    "./assets/right.bmp" ]
 
-
-data KeyDirection = KeyUp | KeyDown | KeyLeft | KeyRight | KeyOther deriving (Show, Read)
+assetMap :: forall a. [a] -> KeyDirection -> a
+assetMap surfaces KeyUp = surfaces !! 1
+assetMap surfaces KeyDown = surfaces !! 2
+assetMap surfaces KeyLeft = surfaces !! 3
+assetMap surfaces KeyRight = surfaces !! 4
+assetMap surfaces _ = head surfaces
 
 main :: IO ()
-main = do
-    initializeSDL [SDL.SDL_INIT_VIDEO] >>= either throwSDLError return
-    window <- createWindow lessonTitle >>= either throwSDLError return
+main = drawInWindow $ \draw -> do
+    surfaces <- mapM getSurfaceFrom surfacePaths
+    let drawAsset = draw . assetMap surfaces
+    draw (head surfaces)
+    repeatUntilComplete $ handle pollEvent drawAsset
+    mapM_ SDL.freeSurface surfaces
 
-    screenSurface <- SDL.getWindowSurface window
-
-    upSurface <- loadBitmap "./assets/up.bmp" >>= either throwSDLError return
-    downSurface <- loadBitmap "./assets/down.bmp" >>= either throwSDLError return
-    leftSurface <- loadBitmap "./assets/left.bmp" >>= either throwSDLError return
-    rightSurface <- loadBitmap "./assets/right.bmp" >>= either throwSDLError return
-    defaultSurface <- loadBitmap "./assets/press.bmp" >>= either throwSDLError return
-
-    let draw surface = SDL.blitSurface surface nullPtr screenSurface nullPtr >> SDL.updateWindowSurface window
-    let drawMap KeyUp = draw upSurface
-        drawMap KeyDown = draw downSurface
-        drawMap KeyLeft = draw leftSurface
-        drawMap KeyRight = draw rightSurface
-        drawMap _ = draw defaultSurface
-
-    draw defaultSurface
-    repeatUntilComplete $ handle pollEvent drawMap
-
-    mapM_ SDL.freeSurface [ defaultSurface, upSurface, downSurface, leftSurface, rightSurface ]
-    SDL.destroyWindow window
-    SDL.quit
-
-
-
-initializeSDL :: [Word32] -> IO (Risky ())
-initializeSDL flags = do
-    initSuccess <- SDL.init $ foldl (.|.) 0 flags
-    return $ if initSuccess < 0 then Left "SDL could not initialize!" else Right ()
-
-
-createWindow :: String -> IO (Risky SDL.Window)
-createWindow windowTitle = withCAString windowTitle $ \title -> do
-    window <- SDL.createWindow title SDL.SDL_WINDOWPOS_UNDEFINED SDL.SDL_WINDOWPOS_UNDEFINED screenWidth screenHeight SDL.SDL_WINDOW_SHOWN
-    return $ if window == nullPtr then Left "Window could not be created!" else Right window
-
-
-loadBitmap :: String -> IO (Risky (Ptr SDL.Surface))
-loadBitmap path = do
-    surface <- withCAString path SDL.loadBMP
-    return $ if surface == nullPtr then Left ("Unable to load image " ++ path ++ "!") else Right surface
-
-
-throwSDLError :: String -> IO a
-throwSDLError message = do
-    errorString <- SDL.getError >>= peekCString
-    fail (message ++ " SDL_Error: " ++ errorString)
-
-
-repeatUntilComplete :: IO Bool -> IO ()
-repeatUntilComplete operation = do
-    complete <- operation
-    unless complete $ repeatUntilComplete operation
-
-
-handle :: IO (Maybe SDL.Event) -> (KeyDirection -> IO a) -> IO Bool
-handle stream keyHandler = do
-    maybeEvent <- stream
-    case maybeEvent of
-        Nothing -> return False
-
-        Just (SDL.QuitEvent _ _) -> return True
-
-        Just (SDL.KeyboardEvent _ _ _ _ _ keysym) -> do
-            keyHandler $ keymap keysym
-            return False
-
-        _ -> return False
-
-
-keymap :: SDL.Keysym -> KeyDirection
-keymap (SDL.Keysym keysymScancode _ _) = case keysymScancode of
-    79 -> KeyRight
-    80 -> KeyLeft
-    81 -> KeyDown
-    82 -> KeyUp
-    _ -> KeyOther
-
-
-pollEvent :: IO (Maybe SDL.Event)
-pollEvent = alloca $ \pointer -> do
-    status <- SDL.pollEvent pointer
-
-    if status == 1
-        then maybePeek peek pointer
-        else return Nothing
-
-
-applyToPointer :: (Storable a) => (a -> b) -> Ptr a -> IO b
-applyToPointer operation pointer = liftM operation $ peek pointer
