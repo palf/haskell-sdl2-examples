@@ -117,7 +117,7 @@ data Asset = ImageAsset SDL.Texture
 withSDLContext :: (SDL.Renderer -> IO a) -> IO ()
 withSDLContext renderOperation = do
     setupResult <- runExceptT $ do
-        initializeSDL [SDL.initFlagVideo]
+        initializeSDL [SDL.SDL_INIT_VIDEO]
         initializeSDLImage [Image.InitPNG]
         setHint RenderScaleQuality Nearest
 
@@ -174,11 +174,11 @@ createWindow windowTitle = do
     window <- liftIO $ withCAString windowTitle $ \title ->
         SDL.createWindow
             title
-            SDL.windowPosUndefined
-            SDL.windowPosUndefined
+            SDL.SDL_WINDOWPOS_UNDEFINED
+            SDL.SDL_WINDOWPOS_UNDEFINED
             screenWidth
             screenHeight
-            SDL.windowFlagShown
+            SDL.SDL_WINDOW_SHOWN
 
     if window == nullPtr
         then throwSDLError WindowError

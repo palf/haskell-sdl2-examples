@@ -27,7 +27,7 @@ screenHeight = 480
 
 main :: IO ()
 main = do
-    initializeSDL [SDL.initFlagVideo] >>= either throwSDLError return
+    initializeSDL [SDL.SDL_INIT_VIDEO] >>= either throwSDLError return
     window <- createWindow lessonTitle >>= either throwSDLError return
 
     screenSurface <- SDL.getWindowSurface window
@@ -48,7 +48,7 @@ initializeSDL flags = do
 
 createWindow :: String -> IO (Risky SDL.Window)
 createWindow windowTitle = withCAString windowTitle $ \title -> do
-    window <- SDL.createWindow title SDL.windowPosUndefined SDL.windowPosUndefined screenWidth screenHeight SDL.windowFlagShown
+    window <- SDL.createWindow title SDL.SDL_WINDOWPOS_UNDEFINED SDL.SDL_WINDOWPOS_UNDEFINED screenWidth screenHeight SDL.SDL_WINDOW_SHOWN
     return $ if window == nullPtr then Left "Window could not be created!" else Right window
 
 

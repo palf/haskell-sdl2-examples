@@ -37,7 +37,7 @@ fullWindow = SDL.Rect {
 
 main :: IO ()
 main = do
-    initializeSDL [SDL.initFlagVideo] >>= catchRisky
+    initializeSDL [SDL.SDL_INIT_VIDEO] >>= catchRisky
     initializeSDLImage [Image.InitPNG] >>= catchRisky
 
     setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
@@ -96,7 +96,7 @@ initializeSDLImage flags = do
 
 createWindow :: String -> IO (Risky SDL.Window)
 createWindow windowTitle = withCAString windowTitle $ \title -> do
-    window <- SDL.createWindow title SDL.windowPosUndefined SDL.windowPosUndefined screenWidth screenHeight SDL.windowFlagShown
+    window <- SDL.createWindow title SDL.SDL_WINDOWPOS_UNDEFINED SDL.SDL_WINDOWPOS_UNDEFINED screenWidth screenHeight SDL.SDL_WINDOW_SHOWN
     return $ if window == nullPtr then Left "Window could not be created!" else Right window
 
 
