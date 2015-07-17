@@ -1,13 +1,16 @@
 module Shared.Utils (
     applyToPointer,
     nullPtr,
+    with,
     ScreenSize
 ) where
 
 import Control.Monad
 import Foreign.C.Types
+import Foreign.Marshal.Utils
 import Foreign.Ptr
 import Foreign.Storable
+
 
 type ScreenSize = (CInt, CInt)
 

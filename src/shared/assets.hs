@@ -1,6 +1,7 @@
 module Shared.Assets where
 
 import qualified Graphics.UI.SDL as SDL
+import GHC.Word
 import Foreign.C.String
 import Foreign.C.Types
 import Foreign.Ptr
@@ -18,3 +19,8 @@ getSurfaceFrom path = loadBitmap path >>= either throwSDLError return
 
 drawOn :: SDL.Window -> Ptr SDL.Surface -> RenderOperation
 drawOn window screen surface = SDL.blitSurface surface nullPtr screen nullPtr >> SDL.updateWindowSurface window
+
+convertSurface :: Ptr SDL.Surface -> Ptr SDL.PixelFormat -> Word32 -> IO (Either String (Ptr SDL.Surface))
+convertSurface surface format flags = do
+    optimizedSurface <- SDL.convertSurface surface format flags
+    return $ if optimizedSurface == nullPtr then Left "Unable to optimize image!" else Right optimizedSurface
