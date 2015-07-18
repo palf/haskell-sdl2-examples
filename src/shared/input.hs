@@ -4,16 +4,16 @@ import qualified Graphics.UI.SDL as SDL
 
 data KeyDirection = KeyUp | KeyDown | KeyLeft | KeyRight | KeyOther deriving (Show, Read)
 
-handleSimple :: IO (Maybe SDL.Event) -> IO Bool
-handleSimple stream = do
+handleNoInput :: IO (Maybe SDL.Event) -> IO Bool
+handleNoInput stream = do
     maybeEvent <- stream
     case maybeEvent of
         Nothing -> return False
         Just (SDL.QuitEvent _ _) -> return True
         _ -> return False
 
-handle :: IO (Maybe SDL.Event) -> (KeyDirection -> IO a) -> IO Bool
-handle stream keyHandler = do
+handleKeyInput :: IO (Maybe SDL.Event) -> (KeyDirection -> IO a) -> IO Bool
+handleKeyInput stream keyHandler = do
     maybeEvent <- stream
     case maybeEvent of
         Nothing -> return False

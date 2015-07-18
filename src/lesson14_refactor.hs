@@ -21,8 +21,8 @@ import GHC.Word
 
 ---- Config ----
 
-lessonTitle :: String
-lessonTitle = "lesson14"
+title :: String
+title = "lesson14"
 
 screenWidth :: CInt
 screenWidth = 640
@@ -118,24 +118,24 @@ withSDLContext :: (SDL.Renderer -> IO a) -> IO ()
 withSDLContext renderOperation = do
     setupResult <- runExceptT $ do
         initializeSDL [SDL.SDL_INIT_VIDEO]
-        initializeSDLImage [Image.InitPNG]
+        Image.imgInit [Image.InitPNG]
         setHint RenderScaleQuality Nearest
 
-        window <- createWindow lessonTitle
-        renderer <- createRenderer window (-1) [SDL.rendererFlagAccelerated, SDL.rendererFlagPresentVSync]
+        window <- createWindow title
+        renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED, SDL.SDL_RENDERER_PRESENTVSYNC]
         return (window, renderer)
 
     sdlCleanup setupResult renderOperation
 
 
 sdlCleanup :: Either SDLError (SDL.Window, SDL.Renderer) -> (SDL.Renderer -> IO a) -> IO ()
-sdlCleanup (Left someError) _ = handleSDLError error someError
+sdlCleanup (Left someError) _ = handleNoInputSDLError error someError
 sdlCleanup (Right (window, renderer)) renderOperation = do
     _ <- renderOperation renderer
     SDL.destroyRenderer renderer
     SDL.destroyWindow window
     SDL.quit
-    Image.quit
+    Image.imgQuit
 
 
 initializeSDL' :: [Word32] -> SDLRisky ()
@@ -163,9 +163,9 @@ throwSDLErrorIf isError e result = if isError result
 
 
 
-initializeSDLImage :: [Image.InitFlag] -> SDLRisky ()
-initializeSDLImage flags = do
-    result <- liftIO $ Image.init (Image.initFlagsToC flags)
+Image.imgInit :: [Image.InitFlag] -> SDLRisky ()
+Image.imgInit flags = do
+    result <- liftIO $ Image.imgInit (Image.imgInitFlagsToC flags)
     when (result < 0) $ throwSDLError (SDLInitError "SDL_Image")
 
 
@@ -210,7 +210,7 @@ withAssets renderer paths f = do
 
 
 cleanupAssets :: Either SDLError [Asset] -> ([Asset] -> IO a) -> IO ()
-cleanupAssets (Left someError) _ = handleSDLError error someError
+cleanupAssets (Left someError) _ = handleNoInputSDLError error someError
 cleanupAssets (Right assets) f = f assets >> mapM_ freeAsset assets
 
 
@@ -315,15 +315,15 @@ data SDLError = SDLInitError String
               | TextureError
 
 
-handleSDLError :: (MonadIO m) => (String -> IO a) -> SDLError -> m a
-handleSDLError handle errorType = do
+handleNoInputSDLError :: (MonadIO m) => (String -> IO a) -> SDLError -> m a
+handleNoInputSDLError handleNoInput errorType = do
     let message = getSDLErrorMessage errorType
     errorString <- liftIO (SDL.getError >>= peekCString)
-    liftIO $ handle (message ++ " SDL_Error: " ++ errorString)
+    liftIO $ handleNoInput (message ++ " SDL_Error: " ++ errorString)
 
 
 logSDLError :: (MonadIO m) => SDLError -> m ()
-logSDLError = handleSDLError print
+logSDLError = handleNoInputSDLError print
 
 
 throwSDLError :: SDLError -> SDLRisky a

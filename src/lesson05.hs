@@ -1,5 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-
 module Main where
 
 import qualified Graphics.UI.SDL as SDL
@@ -32,10 +30,10 @@ main = inWindow $ \window -> do
     screenSurface <- SDL.getWindowSurface window
     imageSurface <- getSurfaceFrom "./assets/stretch.bmp"
     pixelFormat <- SDL.surfaceFormat `applyToPointer` screenSurface
-    stretchedSurface <- convertSurface imageSurface pixelFormat 0 >>= either throwSDLError return
+    stretchedSurface <- optimizeSurface imageSurface pixelFormat 0 >>= either throwSDLError return
     let draw surface stretch = with stretch (SDL.blitScaled surface nullPtr screenSurface) >> SDL.updateWindowSurface window
     let stretchRect = fullWindow
-    repeatUntilComplete $ draw stretchedSurface stretchRect >> handleSimple pollEvent
+    repeatUntilTrue $ draw stretchedSurface stretchRect >> handleNoInput pollEvent
     SDL.freeSurface imageSurface
     SDL.freeSurface stretchedSurface
     SDL.freeSurface screenSurface

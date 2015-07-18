@@ -45,6 +45,6 @@ main = drawInWindow $ \draw -> do
     surfaces <- mapM getSurfaceFrom surfacePaths
     let drawAsset = draw . assetMap surfaces
     draw (head surfaces)
-    repeatUntilComplete $ handle pollEvent drawAsset
+    repeatUntilTrue $ handleKeyInput pollEvent drawAsset
     mapM_ SDL.freeSurface surfaces
 
