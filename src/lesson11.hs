@@ -1,4 +1,6 @@
 module Main where
+import Foreign.Marshal.Alloc
+import Foreign.Marshal.Utils
 
 import Foreign.C.Types
 import Foreign.Ptr
@@ -32,7 +34,9 @@ main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
-    dots@(dotsTexture, _, _) <- loadTexture renderer "./assets/dots.png" >>= either throwSDLError return
+    dotsTexture <- loadTexture renderer "./assets/dots.png"
+    (dw, dh) <- getSize dotsTexture
+    let dots = (dotsTexture, dw, dh)
     let instructions = createRenderInstructions dots
     repeatUntilTrue $ draw renderer instructions >> handleNoInput pollEvent
     destroyTextures [dotsTexture]
@@ -67,11 +71,13 @@ moveTo rect (x, y) = rect { rectX = x, rectY = y }
 destroyTextures :: [SDL.Texture] -> IO ()
 destroyTextures = mapM_ SDL.destroyTexture
 
-loadTexture :: SDL.Renderer -> String -> IO (Either String (SDL.Texture, CInt, CInt))
-loadTexture renderer path = Image.imgLoadTexture renderer path >>= return . fmap fakeSize
+loadTexture :: SDL.Renderer -> String -> IO SDL.Texture
+loadTexture renderer path = Image.imgLoadTexture renderer path >>= either throwSDLError return
 
-fakeSize :: SDL.Texture -> (SDL.Texture, CInt, CInt)
-fakeSize tex = (tex, 200, 200)
+getSize :: SDL.Texture -> IO (CInt, CInt)
+getSize tex = alloca2 $ \w h -> do
+    _ <- SDL.queryTexture tex nullPtr nullPtr w h
+    peek2 (w, h)
 
 createTextureFromSurface :: SDL.Renderer -> Ptr SDL.Surface -> IO (Either String Texture)
 createTextureFromSurface renderer surface = do

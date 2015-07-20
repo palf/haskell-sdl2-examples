@@ -30,7 +30,6 @@ fullWindow = SDL.Rect {
 
 main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
-    Image.imgInit [Image.InitPNG] >>= either throwSDLError return
     setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
     foo@(fooTexture, _, _) <- loadTexture renderer "./assets/foo.png" >>= either throwSDLError return
@@ -55,22 +54,15 @@ destroyTextures :: [SDL.Texture] -> IO ()
 destroyTextures = mapM_ SDL.destroyTexture
 
 loadTexture :: SDL.Renderer -> String -> IO (Either String (SDL.Texture, CInt, CInt))
-loadTexture renderer path = do
-    loadedSurface <- loadSurface path >>= either throwSDLError return
-    let applyToSurface = flip applyToPointer loadedSurface
-    width <- applyToSurface SDL.surfaceW
-    height <- applyToSurface SDL.surfaceH
-    pixelFormat <- applyToSurface SDL.surfaceFormat
-    key <- SDL.mapRGB pixelFormat 0 0xFF 0xFF
-    SDL.setColorKey loadedSurface 1 key
-    newTexture <- createTextureFromSurface renderer loadedSurface >>= either throwSDLError return
-    SDL.freeSurface loadedSurface
-    return $ if newTexture == nullPtr then Left "failed to load texture image" else Right (newTexture, width, height)
+loadTexture renderer path = Image.imgLoadTexture renderer path >>= return . fmap getSize
 
-createTextureFromSurface :: SDL.Renderer -> Ptr SDL.Surface -> IO (Either String Texture)
-createTextureFromSurface renderer surface = do
-    result <- SDL.createTextureFromSurface renderer surface
-    return $ if result == nullPtr then Left "Unable to create texture" else Right result
+getSize :: SDL.Texture -> (SDL.Texture, CInt, CInt)
+getSize tex = (tex, 640, 480)
+
+getTextureSize :: SDL.Texture -> IO (CInt, CInt)
+getTextureSize tex = do
+    query <- SDL.queryTexture tex format access width height
+    return (width, height)
 
 renderTextureIn :: SDL.Renderer -> SDL.Texture -> SDL.Rect -> IO CInt
 renderTextureIn renderer texture renderQuad = with renderQuad $ SDL.renderCopy renderer texture nullPtr

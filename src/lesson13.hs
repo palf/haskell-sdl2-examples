@@ -99,10 +99,10 @@ destroyTextures :: [SDL.Texture] -> IO ()
 destroyTextures = mapM_ SDL.destroyTexture
 
 loadTexture :: SDL.Renderer -> String -> IO (Either String (SDL.Texture, CInt, CInt))
-loadTexture renderer path = Image.imgLoadTexture renderer path >>= return . fmap fakeSize
+loadTexture renderer path = Image.imgLoadTexture renderer path >>= return . fmap getSize
 
-fakeSize :: SDL.Texture -> (SDL.Texture, CInt, CInt)
-fakeSize tex = (tex, 640, 480)
+getSize :: SDL.Texture -> (SDL.Texture, CInt, CInt)
+getSize tex = (tex, 640, 480)
 
 renderTexture :: SDL.Renderer -> SDL.Texture -> SDL.Rect -> SDL.Rect -> IO CInt
 renderTexture renderer texture renderMask renderQuad = with2 renderMask renderQuad $ SDL.renderCopy renderer texture

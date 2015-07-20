@@ -91,10 +91,10 @@ freeAssets = mapM_ (SDL.destroyTexture . first)
     where first (a, _, _) = a
 
 loadTexture :: SDL.Renderer -> String -> IO (Either String (SDL.Texture, CInt, CInt))
-loadTexture renderer path = Image.imgLoadTexture renderer path >>= return . fmap fakeSize
+loadTexture renderer path = Image.imgLoadTexture renderer path >>= return . fmap getSize
 
-fakeSize :: SDL.Texture -> (SDL.Texture, CInt, CInt)
-fakeSize tex = (tex, 384, 48)
+getSize :: SDL.Texture -> (SDL.Texture, CInt, CInt)
+getSize tex = (tex, 384, 48)
 
 renderTexture :: SDL.Renderer -> SDL.Texture -> SDL.Rect -> SDL.Rect -> IO CInt
 renderTexture renderer texture renderMask renderQuad = with2 renderMask renderQuad $ SDL.renderCopy renderer texture
