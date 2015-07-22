@@ -22,13 +22,6 @@ initializeSDL flags = do
     initSuccess <- SDL.init $ foldl (.|.) 0 flags
     return $ if initSuccess < 0 then Left "SDL could not initialize!" else Right ()
 
-{-
-initializeSDLImage :: [Image.InitFlag] -> IO (Risky CInt)
-initializeSDLImage flags = do
-    initSuccess <- Image.imgInit $ Image.imgInitFlagsToC flags
-    return $ if initSuccess < 0 then Left "SDL_image could not initialize!" else Right initSuccess
--}
-
 withSDL :: IO () -> IO ()
 withSDL op = do
     initializeSDL [SDL.SDL_INIT_VIDEO] >>= either throwSDLError return
