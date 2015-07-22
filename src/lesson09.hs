@@ -1,9 +1,8 @@
 module Main where
 
 import qualified Graphics.UI.SDL as SDL
-import qualified Graphics.UI.SDL.Image as Image
 import Graphics.UI.SDL.Types
-import Shared.Assets
+import Shared.Textures
 import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
@@ -28,27 +27,17 @@ fullWindow = SDL.Rect {
 
 main :: IO ()
 main = inWindow $ withRenderer $ \renderer -> do
-    texture <- loadTexture renderer "./assets/viewport.png" >>= either throwSDLError return
+    _ <- SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
+    texture <- loadTexture renderer "./assets/viewport.png"
     repeatUntilTrue $ draw renderer texture >> handleNoInput pollEvent
     SDL.destroyTexture texture
 
-withRenderer :: (SDL.Renderer -> IO ()) -> SDL.Window -> IO ()
-withRenderer operation window = do
-    setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
-    renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
-    SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
-    operation renderer
-    SDL.destroyRenderer renderer
-
-loadTexture :: SDL.Renderer -> String -> IO (Either String SDL.Texture)
-loadTexture renderer path = Image.imgLoadTexture renderer path
-
 draw :: SDL.Renderer -> SDL.Texture -> IO ()
 draw renderer texture = do
-    SDL.renderClear renderer
-    inViewport topLeft >> drawTexture
-    inViewport topRight >> drawTexture
-    inViewport bottom >> drawTexture
+    _ <- SDL.renderClear renderer
+    _ <- inViewport topLeft >> drawTexture
+    _ <- inViewport topRight >> drawTexture
+    _ <- inViewport bottom >> drawTexture
     SDL.renderPresent renderer
 
     where inViewport rect = with rect $ SDL.renderSetViewport renderer

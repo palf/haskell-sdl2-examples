@@ -4,11 +4,11 @@ import qualified Graphics.UI.SDL as SDL
 import qualified Graphics.UI.SDL.Image as Image
 import Graphics.UI.SDL.Types
 import Shared.Assets
+import Shared.Image
 import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
 import Shared.Utils
-
 
 title :: String
 title = "lesson06"
@@ -30,10 +30,10 @@ main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     screenSurface <- SDL.getWindowSurface window
     pixelFormat <- SDL.surfaceFormat `applyToPointer` screenSurface
-    loadedSurface <- getSurfaceFrom "./assets/loaded.png"
+    loadedSurface <- getSurfaceFrom' "./assets/loaded.png"
     imageSurface <- optimizeSurface loadedSurface pixelFormat 0 >>= either throwSDLError return
+    _ <- SDL.freeSurface loadedSurface
     let draw surface = SDL.blitScaled surface nullPtr screenSurface nullPtr >> SDL.updateWindowSurface window
     repeatUntilTrue $ draw imageSurface >> handleNoInput pollEvent
-    SDL.freeSurface loadedSurface
     SDL.freeSurface imageSurface
 

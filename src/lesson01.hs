@@ -16,8 +16,8 @@ main = withSDL $ withWindow title size $ \window -> do
     screenSurface <- SDL.getWindowSurface window
     pixelFormat <- SDL.surfaceFormat `applyToPointer` screenSurface
     color <- SDL.mapRGB pixelFormat 0xFF 0xFF 0xFF
-    SDL.fillRect screenSurface nullPtr color
-    SDL.updateWindowSurface window
+    _ <- SDL.fillRect screenSurface nullPtr color
+    _ <- SDL.updateWindowSurface window
     SDL.delay 2000
     SDL.freeSurface screenSurface
 

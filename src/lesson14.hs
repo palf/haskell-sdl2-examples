@@ -20,6 +20,7 @@ import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
 import Shared.Utils
+import Shared.Textures
 import Shared.UtilsState
 
 
@@ -49,14 +50,13 @@ main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     setHint "SDL_RENDER_SCALE_QUALITY" "0" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED, SDL.SDL_RENDERER_PRESENTVSYNC] >>= either throwSDLError return
-    walkingAsset <- loadTexture renderer "./assets/walk.png" >>= either throwSDLError return
+    walkingAsset <- loadTexture renderer "./assets/walk.png"
     let inputSource = pollEvent `into` updateState
     let pollDraw = inputSource ~>~ drawState renderer [walkingAsset]
     runStateT (repeatUntilComplete pollDraw) initialState
     freeAssets [walkingAsset]
     SDL.destroyRenderer renderer
 
-data Key = W | S | N
 data ColourProperty = Alpha
 data World = World { gameover :: Bool, frame :: Int }
 type Input = Maybe SDL.Event
@@ -89,12 +89,6 @@ repeatUntilComplete game = game >>= \state -> unless (gameover state) $ repeatUn
 freeAssets :: [Asset] -> IO ()
 freeAssets = mapM_ (SDL.destroyTexture . first)
     where first (a, _, _) = a
-
-loadTexture :: SDL.Renderer -> String -> IO (Either String (SDL.Texture, CInt, CInt))
-loadTexture renderer path = Image.imgLoadTexture renderer path >>= return . fmap getSize
-
-getSize :: SDL.Texture -> (SDL.Texture, CInt, CInt)
-getSize tex = (tex, 384, 48)
 
 renderTexture :: SDL.Renderer -> SDL.Texture -> SDL.Rect -> SDL.Rect -> IO CInt
 renderTexture renderer texture renderMask renderQuad = with2 renderMask renderQuad $ SDL.renderCopy renderer texture

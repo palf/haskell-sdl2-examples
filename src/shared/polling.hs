@@ -9,7 +9,7 @@ import Foreign.Storable
 
 repeatUntil :: IO Bool -> IO a -> IO ()
 repeatUntil quitClause operation = do
-    operation
+    _ <- operation
     isQuitting <- quitClause
     unless isQuitting $ repeatUntil quitClause operation
 

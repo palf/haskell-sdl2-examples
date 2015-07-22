@@ -47,7 +47,6 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     freeAssets [asset]
     SDL.destroyRenderer renderer
 
-data Key = Q | W | E | A | S | D | N
 data ColourProperty = Red | Green | Blue | Alpha
 data World = World { gameover :: Bool, degrees :: Int, flipType :: SDL.RendererFlip }
 type Input = Maybe SDL.Event
@@ -88,28 +87,12 @@ modifyState state keysym = case getKey keysym of
     S -> state { degrees = 0, flipType = SDL.SDL_FLIP_NONE }
     _ -> state
 
-getKey :: SDL.Keysym -> Key
-getKey keysym = case keysymScancode keysym of
-    20 -> Q
-    26 -> W
-    8  -> E
-    4  -> A
-    22 -> S
-    7  -> D
-    _  -> N
-
 repeatUntilComplete :: (Monad m) => m World -> m ()
 repeatUntilComplete game = game >>= \state -> unless (gameover state) $ repeatUntilComplete game
 
 freeAssets :: [Asset] -> IO ()
 freeAssets = mapM_ (SDL.destroyTexture . first)
     where first (a, _, _) = a
-
-loadTexture :: SDL.Renderer -> String -> IO (Either String (SDL.Texture, CInt, CInt))
-loadTexture renderer path = Image.imgLoadTexture renderer path >>= return . fmap getSize
-
-getSize :: SDL.Texture -> (SDL.Texture, CInt, CInt)
-getSize tex = (tex, 178, 100)
 
 renderTexture :: SDL.Renderer -> SDL.Texture -> SDL.Rect -> SDL.Rect -> IO CInt
 renderTexture renderer texture renderMask renderQuad = with2 renderMask renderQuad $ SDL.renderCopy renderer texture

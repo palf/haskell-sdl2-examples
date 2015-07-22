@@ -163,12 +163,6 @@ throwSDLErrorIf isError e result = if isError result
 
 
 
-Image.imgInit :: [Image.InitFlag] -> SDLRisky ()
-Image.imgInit flags = do
-    result <- liftIO $ Image.imgInit (Image.imgInitFlagsToC flags)
-    when (result < 0) $ throwSDLError (SDLInitError "SDL_Image")
-
-
 createWindow :: String -> SDLRisky SDL.Window
 createWindow windowTitle = do
     window <- liftIO $ withCAString windowTitle $ \title ->
@@ -339,28 +333,3 @@ getSDLErrorMessage (SurfaceError path)  = "Unable to load image '" ++ path ++ "'
 getSDLErrorMessage TextureError         = "Unable to create texture!"
 
 
----- Utils ----
-
-with2 :: (Storable a, Storable b) => a -> b -> (Ptr a -> Ptr b -> IO c) -> IO c
-with2 a b f = with a $ \a' -> with b (f a')
-
-
-withCAString2 :: String -> String -> (CString -> CString -> IO c) -> IO c
-withCAString2 a b f = withCAString a $ \a' -> withCAString b $ f a'
-
-
-applyToPointer :: (Storable a) => (a -> b) -> Ptr a -> IO b
-applyToPointer operation pointer = liftM operation $ peek pointer
-
-
-infixl 4 ~>~
-(~>~) :: (Monad (t m), Monad m, MonadTrans t) => t m a -> (a -> m b) -> t m a
-(~>~) = kick
-
-
-kick :: (Monad (t m), Monad m, MonadTrans t) => t m a -> (a -> m b) -> t m a
-kick m f = m >>= \x -> (lift . f) x >> return x
-
-
-into :: (Monad m, MonadTrans t, MonadState b (t m)) => m a -> (a -> b -> b) -> t m b
-into source f = lift source >>= modify . f >> get

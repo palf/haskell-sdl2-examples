@@ -2,6 +2,7 @@ module Shared.Lifecycle (
   withSDL,
   withWindow,
   createRenderer,
+  withRenderer,
   setHint,
   logWarning,
   throwSDLError
@@ -44,6 +45,13 @@ createWindow :: String -> (CInt, CInt) -> IO (Risky SDL.Window)
 createWindow title (w, h) = withCAString title $ \ctitle -> do
     window <- SDL.createWindow ctitle SDL.SDL_WINDOWPOS_UNDEFINED SDL.SDL_WINDOWPOS_UNDEFINED w h SDL.SDL_WINDOW_SHOWN
     return $ if window == nullPtr then Left "Window could not be created!" else Right window
+
+withRenderer :: (SDL.Renderer -> IO ()) -> SDL.Window -> IO ()
+withRenderer operation window = do
+    _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
+    renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
+    operation renderer
+    SDL.destroyRenderer renderer
 
 createRenderer :: SDL.Window -> CInt -> [Word32] -> IO (Risky SDL.Renderer)
 createRenderer window index flags = do

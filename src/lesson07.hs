@@ -3,7 +3,6 @@ module Main where
 import qualified Graphics.UI.SDL as SDL
 import qualified Graphics.UI.SDL.Image as Image
 import Graphics.UI.SDL.Types
-import Shared.Assets
 import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
@@ -28,9 +27,9 @@ fullWindow = SDL.Rect {
 
 main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
-    setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
+    _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
-    SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
+    _ <- SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
     texture <- Image.imgLoadTexture renderer "./assets/texture.png" >>= either throwSDLError return
     repeatUntilTrue $ draw renderer texture >> handleNoInput pollEvent
     SDL.destroyTexture texture
@@ -38,7 +37,7 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
 
 draw :: SDL.Renderer -> SDL.Texture -> IO ()
 draw renderer texture = do
-    SDL.renderClear renderer
-    SDL.renderCopy renderer texture nullPtr nullPtr
+    _ <- SDL.renderClear renderer
+    _ <- SDL.renderCopy renderer texture nullPtr nullPtr
     SDL.renderPresent renderer
 

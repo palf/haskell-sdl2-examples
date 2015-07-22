@@ -2,9 +2,7 @@ module Main where
 
 import Foreign.C.Types
 import qualified Graphics.UI.SDL as SDL
---import qualified Graphics.UI.SDL.Image as Image
 import Graphics.UI.SDL.Types
-import Shared.Assets
 import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
@@ -28,30 +26,28 @@ fullWindow = SDL.Rect {
     rectH = snd size }
 
 main :: IO ()
-main = inWindow $ \window -> do
-    setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
-    renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
-    SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
+main = inWindow (withRenderer doRender)
+
+doRender :: SDL.Renderer -> IO ()
+doRender renderer = do
+    _ <- SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
     repeatUntilTrue $ drawAll renderer >> handleNoInput pollEvent
-    SDL.destroyRenderer renderer
-
-
 
 data Colour = White | Red | Blue | Green | Yellow
 
 draw :: SDL.Renderer -> SDL.Texture -> IO ()
 draw renderer texture = do
-    SDL.renderClear renderer
-    SDL.renderCopy renderer texture nullPtr nullPtr
+    _ <- SDL.renderClear renderer
+    _ <- SDL.renderCopy renderer texture nullPtr nullPtr
     SDL.renderPresent renderer
 
 drawAll :: SDL.Renderer -> IO ()
 drawAll renderer = do
-    clearScreen renderer
-    withColor Red >> fillRectangle' innerRect
-    withColor Green >> drawRectangle' outerRect
-    withColor Blue >> drawLine' (0, screenHeight `div` 2) (screenWidth, screenHeight `div` 2)
-    withColor Yellow >> mapM_ (\y -> drawDot' (screenWidth `div` 2, y)) [ 0, 4 .. screenHeight ]
+    _ <- clearScreen renderer
+    _ <- withColor Red >> fillRectangle' innerRect
+    _ <- withColor Green >> drawRectangle' outerRect
+    _ <- withColor Blue >> drawLine' (0, screenHeight `div` 2) (screenWidth, screenHeight `div` 2)
+    _ <- withColor Yellow >> mapM_ (\y -> drawDot' (screenWidth `div` 2, y)) [ 0, 4 .. screenHeight ]
     SDL.renderPresent renderer
 
     where innerRect = SDL.Rect { rectX = screenWidth `div` 4, rectY = screenHeight `div` 4, rectW = screenWidth `div` 2, rectH = screenHeight `div` 2 }
@@ -66,7 +62,7 @@ drawAll renderer = do
 
 clearScreen :: SDL.Renderer -> IO CInt
 clearScreen renderer = do
-    setColor renderer White
+    _ <- setColor renderer White
     SDL.renderClear renderer
 
 fillRectangle :: SDL.Renderer -> SDL.Rect -> IO CInt
