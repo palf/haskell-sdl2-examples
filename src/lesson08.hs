@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Foreign.C.Types
 import qualified Graphics.UI.SDL as SDL

@@ -5,6 +5,7 @@ import Graphics.UI.SDL.Types
 
 data KeyDirection = KeyUp | KeyDown | KeyLeft | KeyRight | KeyOther deriving (Show, Read)
 data Key = Q | W | E | A | S | D | Unknown
+type Input = Maybe SDL.Event
 
 handleNoInput :: IO (Maybe SDL.Event) -> IO Bool
 handleNoInput stream = do

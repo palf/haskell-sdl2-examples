@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances    #-}
 
-module Main where
+module Main (main) where
 
 import qualified Graphics.UI.SDL as SDL
 import qualified Graphics.UI.SDL.Image as Image
@@ -59,7 +59,6 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
 
 data ColourProperty = Alpha
 data World = World { gameover :: Bool, frame :: Int }
-type Input = Maybe SDL.Event
 type Asset = (SDL.Texture, CInt, CInt)
 
 drawState :: SDL.Renderer -> [Asset] -> World -> IO ()

@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import qualified Graphics.UI.SDL as SDL
 import Graphics.UI.SDL.Types
@@ -17,13 +17,6 @@ size = (640, 480)
 
 inWindow :: (SDL.Window -> IO ()) -> IO ()
 inWindow = withSDL . withWindow title size
-
-fullWindow :: SDL.Rect
-fullWindow = SDL.Rect {
-    rectX = 0,
-    rectY = 0,
-    rectW = fst size,
-    rectH = snd size }
 
 main :: IO ()
 main = inWindow $ withRenderer $ \renderer -> do

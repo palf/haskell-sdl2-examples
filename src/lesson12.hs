@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Foreign.C.Types
 import Foreign.Ptr
@@ -23,13 +23,6 @@ size = (640, 480)
 inWindow :: (SDL.Window -> IO ()) -> IO ()
 inWindow = withSDL . withWindow title size
 
-fullWindow :: SDL.Rect
-fullWindow = SDL.Rect {
-    rectX = 0,
-    rectY = 0,
-    rectW = fst size,
-    rectH = snd size }
-
 initialState :: World
 initialState = World { gameover = False, red = 128, green = 128, blue = 128 }
 
@@ -48,7 +41,6 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
 
 data Colour = Red | Green | Blue
 data World = World { gameover :: Bool, red :: Word8, green :: Word8, blue :: Word8 }
-type Input = Maybe SDL.Event
 type Asset = (SDL.Texture, CInt, CInt)
 
 drawState :: SDL.Renderer -> Asset -> World -> IO World
@@ -92,10 +84,4 @@ decrease :: World -> Colour -> World
 decrease state Red = state { red = red state - 16 }
 decrease state Green = state { green = green state - 16 }
 decrease state Blue = state { blue = blue state - 16 }
-
-renderTexture :: SDL.Renderer -> SDL.Texture -> SDL.Rect -> SDL.Rect -> IO CInt
-renderTexture renderer texture renderMask renderQuad = with2 renderMask renderQuad $ SDL.renderCopy renderer texture
-
-moveTo :: SDL.Rect -> (CInt, CInt) -> SDL.Rect
-moveTo rect (x, y) = rect { rectX = x, rectY = y }
 

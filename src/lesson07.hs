@@ -1,8 +1,7 @@
-module Main where
+module Main (main) where
 
 import qualified Graphics.UI.SDL as SDL
 import qualified Graphics.UI.SDL.Image as Image
-import Graphics.UI.SDL.Types
 import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
@@ -17,13 +16,6 @@ size = (640, 480)
 
 inWindow :: (SDL.Window -> IO ()) -> IO ()
 inWindow = withSDL . withWindow title size
-
-fullWindow :: SDL.Rect
-fullWindow = SDL.Rect {
-    rectX = 0,
-    rectY = 0,
-    rectW = fst size,
-    rectH = snd size }
 
 main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
