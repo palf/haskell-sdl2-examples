@@ -13,7 +13,7 @@ import Data.Bits
 import Foreign.C.String
 import Foreign.C.Types
 import GHC.Word
-import Shared.Utils
+import Shared.Utilities
 
 type Risky a = Either String a
 

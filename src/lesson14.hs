@@ -12,9 +12,9 @@ import Shared.Drawing
 import Shared.Lifecycle
 import Shared.Geometry
 import Shared.Polling
-import Shared.Utils
+import Shared.Utilities
 import Shared.Textures
-import Shared.UtilsState
+import Shared.State
 
 
 title :: String

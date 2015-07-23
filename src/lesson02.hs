@@ -3,7 +3,7 @@ module Main (main) where
 import qualified Graphics.UI.SDL as SDL
 import Shared.Assets
 import Shared.Lifecycle
-import Shared.Utils
+import Shared.Utilities
 
 
 title :: String

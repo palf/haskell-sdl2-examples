@@ -12,8 +12,8 @@ import Shared.Input
 import Shared.Lifecycle
 import Shared.Textures
 import Shared.Polling
-import Shared.Utils
-import Shared.UtilsState
+import Shared.Utilities
+import Shared.State
 
 
 title :: String

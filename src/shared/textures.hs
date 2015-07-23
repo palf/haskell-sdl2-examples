@@ -5,7 +5,7 @@ import qualified Graphics.UI.SDL.Image as Image
 import Foreign.C.Types
 import Foreign.Ptr
 import Shared.Lifecycle
-import Shared.Utils
+import Shared.Utilities
 
 {-
 loadTexture :: SDL.Renderer -> String -> IO (Either String SDL.Texture)

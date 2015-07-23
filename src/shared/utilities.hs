@@ -1,4 +1,4 @@
-module Shared.Utils (
+module Shared.Utilities (
     nullPtr,
     applyToPointer,
     alloca,

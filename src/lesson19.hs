@@ -14,8 +14,8 @@ import Shared.Geometry
 import Shared.Lifecycle
 import Shared.Polling
 import Shared.Textures
-import Shared.Utils
-import Shared.UtilsState
+import Shared.Utilities
+import Shared.State
 import qualified Graphics.UI.SDL as SDL
 import qualified Graphics.UI.SDL.Image as Image
 

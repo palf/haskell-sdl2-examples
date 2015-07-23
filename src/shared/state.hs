@@ -1,4 +1,4 @@
-module Shared.UtilsState (
+module Shared.State (
     into,
     kick,
     (~>>),

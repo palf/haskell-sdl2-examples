@@ -4,7 +4,7 @@ import qualified Graphics.UI.SDL as SDL
 import Shared.Assets
 import Shared.Lifecycle
 import Shared.Polling
-import Shared.Utils
+import Shared.Utilities
 
 
 title :: String

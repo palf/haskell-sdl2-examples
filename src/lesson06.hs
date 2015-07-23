@@ -7,7 +7,7 @@ import Shared.Image
 import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
-import Shared.Utils
+import Shared.Utilities
 
 title :: String
 title = "lesson06"

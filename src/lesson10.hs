@@ -9,7 +9,7 @@ import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
 import Shared.Textures
-import Shared.Utils
+import Shared.Utilities
 
 
 title :: String
