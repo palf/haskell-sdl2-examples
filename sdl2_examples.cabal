@@ -153,6 +153,17 @@ executable lesson15
   ghc-options:         -Wall
 
 
+executable lesson17
+  main-is:             lesson17.hs
+  build-depends:       base,
+                       sdl2,
+                       sdl2-image,
+                       mtl
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+
+
 executable lesson19
   main-is:             lesson19.hs
   build-depends:       base,

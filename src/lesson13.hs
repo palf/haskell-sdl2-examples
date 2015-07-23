@@ -39,12 +39,12 @@ initialState = World { gameover = False, alpha = 128 }
 
 main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
-    setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
+    _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
     textures <- mapM (loadTextureAsSurface renderer) ["./assets/fadein.png", "./assets/fadeout.png"]
     let inputSource = pollEvent `into` updateState
     let pollDraw = inputSource ~>~ drawState renderer textures
-    runStateT (repeatUntilComplete pollDraw) initialState
+    _ <- runStateT (repeatUntilComplete pollDraw) initialState
     destroyTextures textures
     SDL.destroyRenderer renderer
 
@@ -57,8 +57,8 @@ drawState :: SDL.Renderer -> [SDL.Texture] -> World -> IO ()
 drawState renderer assets (World False alphaValue) = withBlankScreen renderer $ do
     let background = head assets
     let foreground = assets !! 1
-    with fullWindow $ SDL.renderCopy renderer background nullPtr
-    SDL.setTextureAlphaMod foreground alphaValue
+    _ <- with fullWindow $ SDL.renderCopy renderer background nullPtr
+    _ <- SDL.setTextureAlphaMod foreground alphaValue
     with fullWindow $ SDL.renderCopy renderer foreground nullPtr
 drawState _ _ _ = return ()
 
@@ -90,7 +90,7 @@ loadTextureAsSurface renderer path = do
     let applyToSurface = flip applyToPointer loadedSurface
     pixelFormat <- applyToSurface SDL.surfaceFormat
     key <- SDL.mapRGB pixelFormat 0 0xFF 0xFF
-    SDL.setColorKey loadedSurface 1 key
+    _ <- SDL.setColorKey loadedSurface 1 key
     newTexture <- createTextureFromSurface renderer loadedSurface >>= either throwSDLError return
     SDL.freeSurface loadedSurface
     return newTexture

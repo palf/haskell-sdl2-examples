@@ -18,13 +18,6 @@ size = (640, 480)
 inWindow :: (SDL.Window -> IO ()) -> IO ()
 inWindow = withSDL . withWindow title size
 
-fullWindow :: SDL.Rect
-fullWindow = SDL.Rect {
-    rectX = 0,
-    rectY = 0,
-    rectW = fst size,
-    rectH = snd size }
-
 main :: IO ()
 main = inWindow (withRenderer doRender)
 
@@ -34,12 +27,6 @@ doRender renderer = do
     repeatUntilTrue $ drawAll renderer >> handleNoInput pollEvent
 
 data Colour = White | Red | Blue | Green | Yellow
-
-draw :: SDL.Renderer -> SDL.Texture -> IO ()
-draw renderer texture = do
-    _ <- SDL.renderClear renderer
-    _ <- SDL.renderCopy renderer texture nullPtr nullPtr
-    SDL.renderPresent renderer
 
 drawAll :: SDL.Renderer -> IO ()
 drawAll renderer = do

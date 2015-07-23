@@ -21,13 +21,6 @@ size = (640, 480)
 inWindow :: (SDL.Window -> IO ()) -> IO ()
 inWindow = withSDL . withWindow title size
 
-fullWindow :: SDL.Rect
-fullWindow = SDL.Rect {
-    rectX = 0,
-    rectY = 0,
-    rectW = fst size,
-    rectH = snd size }
-
 main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning

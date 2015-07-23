@@ -40,6 +40,3 @@ with2 a b op = with a $ \a' -> with b $ op a'
 withCAString2 :: String -> String -> (CString -> CString -> IO a) -> IO a
 withCAString2 a b op = withCAString a $ \a' -> withCAString b $ op a'
 
-pass :: (Monad m) => (a -> m b) -> a -> m a
-pass f v = f v >> return v
-

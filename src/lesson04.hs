@@ -22,8 +22,9 @@ inWindow = withSDL . withWindow title size
 drawInWindow :: forall a. (RenderOperation -> IO a) -> IO ()
 drawInWindow drawFunc = inWindow $ \window -> do
     screenSurface <- SDL.getWindowSurface window
-    drawFunc $ drawOn window screenSurface
-    SDL.freeSurface screenSurface
+    _ <- drawFunc $ drawOn window screenSurface
+    _ <- SDL.freeSurface screenSurface
+    return ()
 
 surfacePaths :: [FilePath]
 surfacePaths = [
@@ -44,7 +45,7 @@ main :: IO ()
 main = drawInWindow $ \draw -> do
     surfaces <- mapM getSurfaceFrom surfacePaths
     let drawAsset = draw . assetMap surfaces
-    draw (head surfaces)
-    repeatUntilTrue $ handleKeyInput pollEvent drawAsset
+    _ <- draw (head surfaces)
+    _ <- repeatUntilTrue $ handleKeyInput pollEvent drawAsset
     mapM_ SDL.freeSurface surfaces
 

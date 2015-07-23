@@ -17,6 +17,13 @@ import Foreign.Marshal.Utils
 import Foreign.Ptr
 import Foreign.Storable
 import GHC.Word
+import Shared.Assets
+import Shared.Geometry
+import Shared.Input
+import Shared.Lifecycle
+import Shared.Polling
+import Shared.Utils
+import Shared.UtilsState
 
 
 ---- Config ----
@@ -110,7 +117,6 @@ instance SDLHintValue RenderScaleQualityValue where
     toString Linear = "1"
     toString Best = "2"
 
-type Input = Maybe SDL.Event
 data Asset = ImageAsset SDL.Texture
 
 
@@ -161,8 +167,6 @@ throwSDLErrorIf isError e result = if isError result
     then throwSDLError e
     else return result
 
-
-
 createWindow :: String -> SDLRisky SDL.Window
 createWindow windowTitle = do
     window <- liftIO $ withCAString windowTitle $ \title ->
@@ -186,16 +190,6 @@ createRenderer window index flags = do
         then throwSDLError RendererError
         else return renderer
 
-
-setHint :: (SDLHintValue a) => SDLHintKey -> a -> SDLRisky ()
-setHint key value = do
-    result <- liftIO $ withCAString2 (show key) (toString value) SDL.setHint
-    unless result $ logSDLError (SetHintError (show key))
-
-
----- Teardown ----
-
--- NOTE : this only works when there is just one asset
 
 withAssets :: SDL.Renderer -> [FilePath] -> ([Asset] -> IO a) -> IO ()
 withAssets renderer paths f = do
@@ -249,53 +243,6 @@ createTextureFromSurface renderer surface = do
 
 renderTexture :: SDL.Renderer -> SDL.Texture -> SDL.Rect -> SDL.Rect -> IO CInt
 renderTexture renderer texture renderMask renderQuad = with2 renderMask renderQuad $ SDL.renderCopy renderer texture
-
-
----- Geometry ----
-
-instance Num (GeomPoint) where
-   (ax, ay) + (bx, by) = (ax + bx, ay + by)
-   (ax, ay) - (bx, by) = (ax - bx, ay - by)
-   (ax, ay) * (bx, by) = (ax * bx, ay * by)
-   abs (x, y) = (abs x, abs y)
-   signum (x, y) = (signum x, signum y)
-   fromInteger a = (fromInteger a, 0)
-
-
-type GeomPoint = (CInt, CInt)
-
-
-toRect :: (Integral a) => a -> a -> a -> a -> SDL.Rect
-toRect x y w h = SDL.Rect { rectX = fromIntegral x, rectY = fromIntegral y, rectW = fromIntegral w, rectH = fromIntegral h }
-
-
-moveTo :: (Integral a1, Integral a2) => SDL.Rect -> (a1, a2) -> SDL.Rect
-moveTo rect (x, y) = rect { rectX = fromIntegral x, rectY = fromIntegral y }
-
-
-moveBy :: (Integral a1, Integral a2) => SDL.Rect -> (a1, a2) -> SDL.Rect
-moveBy shape (x, y) = shape { rectX = rectX shape + fromIntegral x, rectY = rectY shape + fromIntegral y }
-
-
-centredOn :: SDL.Rect -> SDL.Rect -> SDL.Rect
-centredOn inner outer = inner `moveBy` (centreOf outer - centreOf inner)
-
-
-centreOf :: SDL.Rect -> GeomPoint
-centreOf shape = (x, y)
-    where x = rectX shape + rectW shape `div` 2
-          y = rectY shape + rectH shape `div` 2
-
-
----- Event Handling ----
-
-pollEvent :: IO Input
-pollEvent = alloca $ \pointer -> do
-    status <- SDL.pollEvent pointer
-
-    if status == 1
-        then maybePeek peek pointer
-        else return Nothing
 
 
 ---- Error Handling ----

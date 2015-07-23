@@ -4,16 +4,13 @@
 module Main (main) where
 
 import Control.Monad.State hiding (state)
-import Data.Bits
-import Foreign.C.String
 import Foreign.C.Types
-import Foreign.Marshal.Alloc
 import Foreign.Ptr
 import GHC.Word
 import Graphics.UI.SDL.Types
 import Shared.Drawing
-import Shared.Image
 import Shared.Input
+import Shared.Geometry
 import Shared.Lifecycle
 import Shared.Polling
 import Shared.Textures
@@ -69,8 +66,8 @@ drawState renderer assets state = withBlankScreen renderer $ do
     with2 mask (position inputState) $ \mask' position' ->
         SDL.renderCopyEx renderer texture mask' position' degrees' nullPtr SDL.SDL_FLIP_NONE
     where texture = head assets
-          w = 89
-          h = 50
+          w = 89 :: Integer
+          h = 50 :: Integer
           sprite = toRect 0 0 w h
           mask = sprite
           position grrr = sprite `centredOn` fullWindow `moveBy` superScale grrr
@@ -109,26 +106,4 @@ updateState _ state = state
 
 repeatUntilComplete :: (Monad m) => m World -> m ()
 repeatUntilComplete game = game >>= \state -> unless (gameover state) (repeatUntilComplete game)
-
-instance Num (CInt, CInt) where
-   (ax, ay) + (bx, by) = (ax + bx, ay + by)
-   (ax, ay) - (bx, by) = (ax - bx, ay - by)
-   (ax, ay) * (bx, by) = (ax * bx, ay * by)
-   abs (x, y) = (abs x, abs y)
-   signum (x, y) = (signum x, signum y)
-   fromInteger a = (fromInteger a, 0)
-
-toRect :: (Integral a) => a -> a -> a -> a -> SDL.Rect
-toRect x y w h = SDL.Rect { rectX = fromIntegral x, rectY = fromIntegral y, rectW = fromIntegral w, rectH = fromIntegral h }
-
-moveBy :: (Integral a) => SDL.Rect -> (a, a) -> SDL.Rect
-moveBy shape (dx, dy) = shape { rectX = rectX shape + fromIntegral dx, rectY = rectY shape + fromIntegral dy }
-
-centredOn :: SDL.Rect -> SDL.Rect -> SDL.Rect
-centredOn inner outer = inner `moveBy` (centreOf outer - centreOf inner)
-
-centreOf :: SDL.Rect -> (CInt, CInt)
-centreOf shape = (x, y)
-    where x = rectX shape + rectW shape `div` 2
-          y = rectY shape + rectH shape `div` 2
 

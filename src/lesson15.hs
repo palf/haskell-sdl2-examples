@@ -9,7 +9,9 @@ import Graphics.UI.SDL.Types
 import Control.Monad.State hiding (state)
 import Foreign.C.Types
 import Foreign.Ptr
-import Shared.Assets
+import Shared.Textures
+import Shared.Geometry
+import Shared.Drawing
 import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
@@ -38,16 +40,17 @@ initialState = World { gameover = False, degrees = 0, flipType = SDL.SDL_FLIP_NO
 
 main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
-    setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
+    _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED, SDL.SDL_RENDERER_PRESENTVSYNC] >>= either throwSDLError return
-    asset <- loadTexture renderer "./assets/arrow.png" >>= either throwSDLError return
+    texture <- loadTexture renderer "./assets/arrow.png"
+    (w, h) <- getTextureSize texture
+    let asset = (texture, w, h)
     let inputSource = pollEvent `into` updateState
     let pollDraw = inputSource ~>~ drawState renderer [asset]
-    runStateT (repeatUntilComplete pollDraw) initialState
+    _ <- runStateT (repeatUntilComplete pollDraw) initialState
     freeAssets [asset]
     SDL.destroyRenderer renderer
 
-data ColourProperty = Red | Green | Blue | Alpha
 data World = World { gameover :: Bool, degrees :: Int, flipType :: SDL.RendererFlip }
 type Asset = (SDL.Texture, CInt, CInt)
 
@@ -61,13 +64,6 @@ drawState renderer assets state = withBlankScreen renderer $
           mask = sprite
           position = sprite `centredOn` fullWindow
           degrees' = fromIntegral (degrees state)
-
-withBlankScreen :: SDL.Renderer -> IO a -> IO ()
-withBlankScreen renderer operation = do
-    SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
-    SDL.renderClear renderer
-    operation
-    SDL.renderPresent renderer
 
 updateState :: Input -> World -> World
 updateState (Just (SDL.QuitEvent _ _)) state = state { gameover = True }
@@ -92,37 +88,4 @@ repeatUntilComplete game = game >>= \state -> unless (gameover state) $ repeatUn
 freeAssets :: [Asset] -> IO ()
 freeAssets = mapM_ (SDL.destroyTexture . first)
     where first (a, _, _) = a
-
-renderTexture :: SDL.Renderer -> SDL.Texture -> SDL.Rect -> SDL.Rect -> IO CInt
-renderTexture renderer texture renderMask renderQuad = with2 renderMask renderQuad $ SDL.renderCopy renderer texture
-
-instance Num (GeomPoint) where
-   (ax, ay) + (bx, by) = (ax + bx, ay + by)
-   (ax, ay) - (bx, by) = (ax - bx, ay - by)
-   (ax, ay) * (bx, by) = (ax * bx, ay * by)
-   abs (x, y) = (abs x, abs y)
-   signum (x, y) = (signum x, signum y)
-   fromInteger a = (fromInteger a, 0)
-
-type GeomPoint = (CInt, CInt)
-
-toRect :: (Integral a) => a -> a -> a -> a -> SDL.Rect
-toRect x y w h = SDL.Rect { rectX = fromIntegral x, rectY = fromIntegral y, rectW = fromIntegral w, rectH = fromIntegral h }
-
-moveTo :: (Integral a1, Integral a2) => SDL.Rect -> (a1, a2) -> SDL.Rect
-moveTo rect (x, y) = rect { rectX = fromIntegral x, rectY = fromIntegral y }
-
-moveBy :: (Integral a1, Integral a2) => SDL.Rect -> (a1, a2) -> SDL.Rect
-moveBy shape (x, y) = shape { rectX = rectX shape + fromIntegral x, rectY = rectY shape + fromIntegral y }
-
-centredOn :: SDL.Rect -> SDL.Rect -> SDL.Rect
-centredOn inner outer = inner `moveBy` (centreOf outer - centreOf inner)
-
-centreOf :: SDL.Rect -> GeomPoint
-centreOf shape = (x, y)
-    where x = rectX shape + rectW shape `div` 2
-          y = rectY shape + rectH shape `div` 2
-
-toSDLPoint :: GeomPoint -> SDL.Point
-toSDLPoint (x, y) = SDL.Point { pointX = x, pointY = y }
 
