@@ -10,3 +10,5 @@ cabal-dev
 .cabal-sandbox/
 cabal.sandbox.config
 cabal.config
+*.hp
+*.prof
