@@ -7,9 +7,8 @@ import qualified Graphics.UI.SDL as SDL
 import qualified Graphics.UI.SDL.Image as Image
 import Graphics.UI.SDL.Types
 import Control.Monad.State hiding (state)
-import Foreign.C.Types
 import Foreign.Ptr
-import Shared.Textures
+import Shared.Assets
 import Shared.Geometry
 import Shared.Drawing
 import Shared.Input
@@ -42,19 +41,16 @@ main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED, SDL.SDL_RENDERER_PRESENTVSYNC] >>= either throwSDLError return
-    texture <- loadTexture renderer "./assets/arrow.png"
-    (w, h) <- getTextureSize texture
-    let asset = (texture, w, h)
-    let inputSource = pollEvent `into` updateState
-    let pollDraw = inputSource ~>~ drawState renderer [asset]
-    _ <- runStateT (repeatUntilComplete pollDraw) initialState
-    mapM_ destroyAsset [asset]
+    withAssets renderer ["./assets/arrow.png"] $ \assets -> do
+        let inputSource = pollEvent `into` updateState
+        let pollDraw = inputSource ~>~ drawWorld renderer assets
+        runStateT (repeatUntilComplete pollDraw) initialState
     SDL.destroyRenderer renderer
 
 data World = World { gameover :: Bool, degrees :: Int, flipType :: SDL.RendererFlip }
 
-drawState :: SDL.Renderer -> [Asset] -> World -> IO ()
-drawState renderer assets state = withBlankScreen renderer $
+drawWorld :: SDL.Renderer -> [Asset] -> World -> IO ()
+drawWorld renderer assets state = withBlankScreen renderer $
     with2 mask position $ \mask' position' ->
         SDL.renderCopyEx renderer texture mask' position' degrees' nullPtr (flipType state)
 

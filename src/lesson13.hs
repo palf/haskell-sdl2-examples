@@ -43,7 +43,7 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
     textures <- mapM (loadTextureAsSurface renderer) ["./assets/fadein.png", "./assets/fadeout.png"]
     let inputSource = pollEvent `into` updateState
-    let pollDraw = inputSource ~>~ drawState renderer textures
+    let pollDraw = inputSource ~>~ drawWorld renderer textures
     _ <- runStateT (repeatUntilComplete pollDraw) initialState
     destroyTextures textures
     SDL.destroyRenderer renderer
@@ -53,14 +53,14 @@ data ColourProperty = Alpha
 data World = World { gameover :: Bool, alpha :: Word8 }
 
 
-drawState :: SDL.Renderer -> [SDL.Texture] -> World -> IO ()
-drawState renderer assets (World False alphaValue) = withBlankScreen renderer $ do
+drawWorld :: SDL.Renderer -> [SDL.Texture] -> World -> IO ()
+drawWorld renderer assets (World False alphaValue) = withBlankScreen renderer $ do
     let background = head assets
     let foreground = assets !! 1
     _ <- with fullWindow $ SDL.renderCopy renderer background nullPtr
     _ <- SDL.setTextureAlphaMod foreground alphaValue
     with fullWindow $ SDL.renderCopy renderer foreground nullPtr
-drawState _ _ _ = return ()
+drawWorld _ _ _ = return ()
 
 updateState :: Input -> World -> World
 updateState (Just (SDL.KeyboardEvent evtType _ _ _ _ keysym)) state = if evtType == SDL.SDL_KEYDOWN then modifyState state keysym else state

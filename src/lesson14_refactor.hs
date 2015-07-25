@@ -51,7 +51,7 @@ main :: IO ()
 main = withSDLContext $ \renderer ->
     withAssets renderer ["./assets/walk.png"] $ \assets -> do
         let inputSource = pollEvent `into` updateState
-        let pollDraw = inputSource ~>~ drawState renderer assets
+        let pollDraw = inputSource ~>~ drawWorld renderer assets
         runStateT (repeatUntilComplete pollDraw) initialState
 
 
@@ -59,8 +59,8 @@ fullWindow :: SDL.Rect
 fullWindow = toRect 0 0 screenWidth screenHeight
 
 
-drawState :: SDL.Renderer -> [Asset] -> World -> IO ()
-drawState renderer assets (World Running frameValue) = withBlankScreen renderer $ do
+drawWorld :: SDL.Renderer -> [Asset] -> World -> IO ()
+drawWorld renderer assets (World Running frameValue) = withBlankScreen renderer $ do
     let currentFrame = getFrameAtTime frameValue
     let ImageAsset texture' = head assets
     let spriteRect = toRect 0 0 192 (192 :: Int)
@@ -72,7 +72,7 @@ drawState renderer assets (World Running frameValue) = withBlankScreen renderer 
           frameCount = 8
           getFrameAtTime t = 8 `stepsPerSecond` t `mod` frameCount
 
-drawState _ _ _ = return ()
+drawWorld _ _ _ = return ()
 
 
 stepsPerSecond :: Int -> Int -> Int

@@ -7,12 +7,10 @@ import qualified Graphics.UI.SDL as SDL
 import qualified Graphics.UI.SDL.Image as Image
 import Graphics.UI.SDL.Types
 import Control.Monad.State hiding (state)
-import Foreign.C.Types
 import Shared.Input
 import Shared.Assets
 import Shared.Drawing
 import Shared.Lifecycle
-import Shared.Textures
 import Shared.Polling
 import Shared.Utilities
 import Shared.State
@@ -37,7 +35,7 @@ main :: IO ()
 main = withSDLContext $ \renderer ->
     withAssets renderer ["./assets/mouse_states.png"] $ \assets -> do
         let inputSource = pollEvent `into` updateState
-        let pollDraw = inputSource ~>~ drawState renderer assets
+        let pollDraw = inputSource ~>~ drawWorld renderer assets
         runStateT (repeatUntilComplete pollDraw) initialState
 
 withSDLContext :: (SDL.Renderer -> IO ()) -> IO ()
@@ -53,8 +51,8 @@ data Entity = Entity { mouseState :: EntityState, position :: Position }
 data Position = TopLeft | TopRight | BottomLeft | BottomRight deriving (Eq, Enum, Bounded)
 data EntityState = MouseOut | MouseOver | MouseDown | MouseUp
 
-drawState :: SDL.Renderer -> [Asset] -> World -> IO ()
-drawState renderer assets world = withBlankScreen renderer $ mapM render' (quadrants world)
+drawWorld :: SDL.Renderer -> [Asset] -> World -> IO ()
+drawWorld renderer assets world = withBlankScreen renderer $ mapM render' (quadrants world)
     where (texture, w, h) = head assets
           render' entity = with2 (maskFor entity) (positionFor entity) (SDL.renderCopy renderer texture)
           sprite = toRect 0 0 (w `div` 2) (h `div` 2)

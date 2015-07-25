@@ -46,7 +46,7 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     disableEventPolling [SDL.SDL_CONTROLLERAXISMOTION, SDL.SDL_JOYAXISMOTION]
     let initialState = World { gameover = False, getController = gameController, target = (320, 240) }
     let inputSource = pollEvent `into` updateState
-    let pollDraw = inputSource ~>~ drawState renderer [texture]
+    let pollDraw = inputSource ~>~ drawWorld renderer [texture]
     _ <- runStateT (repeatUntilComplete pollDraw) initialState
     SDL.gameControllerClose gameController
     SDL.destroyTexture texture
@@ -60,8 +60,8 @@ disableEventPolling :: [Word32] -> IO ()
 disableEventPolling = mapM_ (`SDL.eventState` 0)
 
 
-drawState :: SDL.Renderer -> [SDL.Texture] -> World -> IO ()
-drawState renderer assets state = withBlankScreen renderer $ do
+drawWorld :: SDL.Renderer -> [SDL.Texture] -> World -> IO ()
+drawWorld renderer assets state = withBlankScreen renderer $ do
     inputState <- getControllerState (getController state)
     with2 mask (position inputState) $ \mask' position' ->
         SDL.renderCopyEx renderer texture mask' position' degrees' nullPtr SDL.SDL_FLIP_NONE

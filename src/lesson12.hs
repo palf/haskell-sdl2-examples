@@ -29,26 +29,27 @@ main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
-    withAssets renderer $ \assets -> do
+    withAssets renderer ["./assets/colors.png"] $ \assets -> do
         let inputSource = pollEvent `into` updateState
-        let pollDraw = inputSource ~>> drawState renderer (head asset)
+        let pollDraw = inputSource ~>> drawWorld renderer assets
         runStateT (repeatUntilComplete pollDraw) initialState
     SDL.destroyRenderer renderer
 
 data Colour = Red | Green | Blue
 data World = World { gameover :: Bool, red :: Word8, green :: Word8, blue :: Word8 }
 
-drawState :: SDL.Renderer -> Asset -> World -> IO World
-drawState renderer (texture, width, height) state@(World False r g b) = do
+drawWorld :: SDL.Renderer -> [Asset] -> World -> IO World
+drawWorld renderer assets state@(World False r g b) = do
     _ <- SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
     _ <- SDL.renderClear renderer
     _ <- SDL.setTextureColorMod texture r g b
     _ <- renderTexture' position
     _ <- SDL.renderPresent renderer
     return state
-    where renderTexture' renderQuad = with renderQuad $ SDL.renderCopy renderer texture nullPtr
+    where (texture, width, height) = head assets
+          renderTexture' renderQuad = with renderQuad $ SDL.renderCopy renderer texture nullPtr
           position = SDL.Rect { rectX = 0, rectY = 0, rectW = width, rectH = height }
-drawState _ _ state = return state
+drawWorld _ _ state = return state
 
 updateState :: Input -> World -> World
 updateState (Just (SDL.KeyboardEvent evtType _ _ _ _ keysym)) state = if evtType == SDL.SDL_KEYDOWN then modifyState state keysym else state

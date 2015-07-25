@@ -1,4 +1,7 @@
-module Shared.Assets where
+module Shared.Assets (
+    withAssets,
+    Asset
+) where
 
 import qualified Graphics.UI.SDL as SDL
 import Foreign.C.Types

@@ -45,22 +45,22 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED, SDL.SDL_RENDERER_PRESENTVSYNC] >>= either throwSDLError return
     walkingTexture <- loadTexture renderer "./assets/walk.png"
     let inputSource = pollEvent `into` updateState
-    let pollDraw = inputSource ~>~ drawState renderer [walkingTexture]
+    let pollDraw = inputSource ~>~ drawWorld renderer [walkingTexture]
     _ <- runStateT (repeatUntilComplete pollDraw) initialState
     destroyTextures [walkingTexture]
     SDL.destroyRenderer renderer
 
 data World = World { gameover :: Bool, frame :: Int }
 
-drawState :: SDL.Renderer -> [SDL.Texture] -> World -> IO ()
-drawState renderer assets (World False frameValue) = withBlankScreen renderer $ do
+drawWorld :: SDL.Renderer -> [SDL.Texture] -> World -> IO ()
+drawWorld renderer assets (World False frameValue) = withBlankScreen renderer $ do
     let currentFrame = (frameValue `div` 8) `mod` 8
     let texture = head assets
     let spriteRect = toRect 0 0 (192::Integer) (192::Integer)
     with2 (getMask currentFrame) (spriteRect `centredOn` fullWindow ) (SDL.renderCopy renderer texture)
     where getMask :: Int -> SDL.Rect
           getMask x = toRect (x * 48) 0 48 48
-drawState _ _ _ = return ()
+drawWorld _ _ _ = return ()
 
 updateState :: Input -> World -> World
 updateState (Just (SDL.QuitEvent _ _)) state = state { gameover = True }
