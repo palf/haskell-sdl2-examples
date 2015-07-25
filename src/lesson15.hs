@@ -48,11 +48,10 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     let inputSource = pollEvent `into` updateState
     let pollDraw = inputSource ~>~ drawState renderer [asset]
     _ <- runStateT (repeatUntilComplete pollDraw) initialState
-    freeAssets [asset]
+    mapM_ destroyAsset [asset]
     SDL.destroyRenderer renderer
 
 data World = World { gameover :: Bool, degrees :: Int, flipType :: SDL.RendererFlip }
-type Asset = (SDL.Texture, CInt, CInt)
 
 drawState :: SDL.Renderer -> [Asset] -> World -> IO ()
 drawState renderer assets state = withBlankScreen renderer $
@@ -84,8 +83,4 @@ modifyState state keysym = case getKey keysym of
 
 repeatUntilComplete :: (Monad m) => m World -> m ()
 repeatUntilComplete game = game >>= \state -> unless (gameover state) $ repeatUntilComplete game
-
-freeAssets :: [Asset] -> IO ()
-freeAssets = mapM_ (SDL.destroyTexture . first)
-    where first (a, _, _) = a
 

@@ -1,13 +1,12 @@
 module Main (main) where
 
-import Foreign.C.Types
 import Foreign.Ptr
 import Control.Monad.State hiding (state)
 import GHC.Word
 import qualified Graphics.UI.SDL as SDL
 import qualified Graphics.UI.SDL.Image as Image
 import Graphics.UI.SDL.Types
-import Shared.Textures
+import Shared.Assets
 import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
@@ -30,18 +29,14 @@ main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
-    texture <- loadTexture renderer "./assets/colors.png"
-    (w, h) <- getTextureSize texture
-    let asset = (texture, w, h)
-    let inputSource = pollEvent `into` updateState
-    let pollDraw = inputSource ~>> drawState renderer asset
-    _ <- runStateT (repeatUntilComplete pollDraw) initialState
-    destroyTextures [texture]
+    withAssets renderer $ \assets -> do
+        let inputSource = pollEvent `into` updateState
+        let pollDraw = inputSource ~>> drawState renderer (head asset)
+        runStateT (repeatUntilComplete pollDraw) initialState
     SDL.destroyRenderer renderer
 
 data Colour = Red | Green | Blue
 data World = World { gameover :: Bool, red :: Word8, green :: Word8, blue :: Word8 }
-type Asset = (SDL.Texture, CInt, CInt)
 
 drawState :: SDL.Renderer -> Asset -> World -> IO World
 drawState renderer (texture, width, height) state@(World False r g b) = do

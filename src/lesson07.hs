@@ -6,6 +6,7 @@ import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
 import Shared.Utilities
+import Shared.Textures
 
 
 title :: String
@@ -22,7 +23,7 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
     _ <- SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
-    texture <- Image.imgLoadTexture renderer "./assets/texture.png" >>= either throwSDLError return
+    texture <- loadTexture "./assets/texture.png"
     repeatUntilTrue $ draw renderer texture >> handleNoInput pollEvent
     SDL.destroyTexture texture
     SDL.destroyRenderer renderer
