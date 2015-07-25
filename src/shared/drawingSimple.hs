@@ -1,4 +1,4 @@
-module Shared.Assets where
+module Shared.DrawingSimple where
 
 import qualified Graphics.UI.SDL as SDL
 import GHC.Word

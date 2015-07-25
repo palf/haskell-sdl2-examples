@@ -3,7 +3,7 @@
 module Main (main) where
 
 import qualified Graphics.UI.SDL as SDL
-import Shared.Assets
+import Shared.DrawingSimple
 import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling

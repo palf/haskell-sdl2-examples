@@ -17,7 +17,7 @@ import Foreign.Marshal.Utils
 import Foreign.Ptr
 import Foreign.Storable
 import GHC.Word
-import Shared.Assets
+import Shared.DrawingSimple
 import Shared.Geometry
 import Shared.Input
 import Shared.Lifecycle

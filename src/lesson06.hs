@@ -2,7 +2,7 @@ module Main (main) where
 
 import qualified Graphics.UI.SDL as SDL
 import qualified Graphics.UI.SDL.Image as Image
-import Shared.Assets
+import Shared.DrawingSimple
 import Shared.Image
 import Shared.Input
 import Shared.Lifecycle

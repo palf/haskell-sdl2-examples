@@ -1,7 +1,7 @@
 module Main (main) where
 
 import qualified Graphics.UI.SDL as SDL
-import Shared.Assets
+import Shared.DrawingSimple
 import Shared.Lifecycle
 import Shared.Utilities
 

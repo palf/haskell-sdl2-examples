@@ -9,6 +9,7 @@ import Graphics.UI.SDL.Types
 import Control.Monad.State hiding (state)
 import Foreign.C.Types
 import Shared.Input
+import Shared.Drawing
 import Shared.Lifecycle
 import Shared.Textures
 import Shared.Polling
@@ -32,17 +33,34 @@ makeEntity :: Position -> Entity
 makeEntity pos = Entity { mouseState = MouseOut, position = pos }
 
 main :: IO ()
-main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
+main = withSDLContext $ \renderer ->
+    withAssets renderer ["./assets/mouse_states.png"] $ \assets -> do
+        let inputSource = pollEvent `into` updateState
+        let pollDraw = inputSource ~>~ drawState renderer assets
+        runStateT (repeatUntilComplete pollDraw) initialState
+
+withSDLContext :: (SDL.Renderer -> IO ()) -> IO ()
+withSDLContext f = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     _ <- setHint "SDL_RENDER_SCALE_QUALITY" "0" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED, SDL.SDL_RENDERER_PRESENTVSYNC] >>= either throwSDLError return
-    texture <- loadTexture renderer "./assets/mouse_states.png"
-    (w, h) <- getTextureSize texture
-    let asset = (texture, w, h)
-    let inputSource = pollEvent `into` updateState
-    let pollDraw = inputSource ~>~ drawState renderer [asset]
-    _ <- runStateT (repeatUntilComplete pollDraw) initialState
-    SDL.destroyTexture texture
+    _ <- f renderer
     SDL.destroyRenderer renderer
+
+withAssets :: SDL.Renderer -> [FilePath] -> ([Asset] -> IO a) -> IO ()
+withAssets renderer paths f = do
+    assets <- mapM (loadAsset renderer) paths
+    _ <- f assets
+    mapM_ destroyAsset assets
+
+loadAsset :: SDL.Renderer -> FilePath -> IO Asset
+loadAsset renderer path = do
+    texture <- loadTexture renderer path
+    (w, h) <- getTextureSize texture
+    return (texture, w, h)
+
+destroyAsset :: Asset -> IO ()
+destroyAsset (texture, _, _) = SDL.destroyTexture texture
+
 
 
 data World = World { gameover :: Bool, quadrants :: [Entity] }
@@ -56,7 +74,7 @@ drawState renderer assets world = withBlankScreen renderer $ mapM render' (quadr
     where (texture, w, h) = head assets
           render' entity = with2 (maskFor entity) (positionFor entity) (SDL.renderCopy renderer texture)
           sprite = toRect 0 0 (w `div` 2) (h `div` 2)
-          maskFor entity = maskFromState sprite (mouseState entity) 
+          maskFor entity = maskFromState sprite (mouseState entity)
           positionFor entity = sprite `moveTo` positionToPoint (position entity)
 
 within :: (Int, Int) -> (Int, Int) -> Bool
@@ -79,12 +97,6 @@ positionToPoint BottomRight = (320, 240)
 allPositions :: [Position]
 allPositions = [minBound .. ]
 
-withBlankScreen :: SDL.Renderer -> IO a -> IO ()
-withBlankScreen renderer operation = do
-    _ <- SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
-    _ <- SDL.renderClear renderer
-    _ <- operation
-    SDL.renderPresent renderer
 
 updateState :: Input -> World -> World
 updateState (Just (SDL.QuitEvent _ _)) state = state { gameover = True }
@@ -101,7 +113,7 @@ makeNewEntity x y pos = Entity { mouseState = newState, position = pos }
     where newState = getMouseState pos x y
 
 getMouseState :: Position -> Int -> Int -> EntityState
-getMouseState pos x y 
+getMouseState pos x y
     | (x, y) `within` n  = MouseOver
     | otherwise     = MouseOut
     where n = positionToPoint pos
