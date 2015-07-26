@@ -5,6 +5,7 @@ import qualified Graphics.UI.SDL.Image as Image
 import Foreign.C.Types
 import Foreign.Ptr
 import Shared.Lifecycle
+import Shared.Image
 import Shared.Utilities
 
 {-
@@ -21,6 +22,17 @@ destroyTextures = mapM_ SDL.destroyTexture
 
 loadTexture :: SDL.Renderer -> String -> IO SDL.Texture
 loadTexture renderer path = Image.imgLoadTexture renderer path >>= either throwSDLError return
+
+loadTextureAsSurface :: SDL.Renderer -> String -> IO SDL.Texture
+loadTextureAsSurface renderer path = do
+    loadedSurface <- imgLoadSurface path >>= either throwSDLError return
+    let applyToSurface = flip applyToPointer loadedSurface
+    pixelFormat <- applyToSurface SDL.surfaceFormat
+    key <- SDL.mapRGB pixelFormat 0 0xFF 0xFF
+    _ <- SDL.setColorKey loadedSurface 1 key
+    newTexture <- createTextureFromSurface renderer loadedSurface >>= either throwSDLError return
+    SDL.freeSurface loadedSurface
+    return newTexture
 
 getTextureSize :: SDL.Texture -> IO (CInt, CInt)
 getTextureSize tex = alloca2 $ \w h -> do

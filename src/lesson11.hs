@@ -4,7 +4,7 @@ import Foreign.C.Types
 import qualified Graphics.UI.SDL as SDL
 import qualified Graphics.UI.SDL.Image as Image
 import Graphics.UI.SDL.Types
-import Shared.Textures
+import Shared.Assets
 import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
@@ -24,25 +24,23 @@ main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
-    dotsTexture <- loadTexture renderer "./assets/dots.png"
-    (dw, dh) <- getTextureSize dotsTexture
-    let dots = (dotsTexture, dw, dh)
-    let instructions = createRenderInstructions dots
-    repeatUntilTrue $ draw renderer instructions >> handleNoInput pollEvent
-    destroyTextures [dotsTexture]
+    withAssets renderer ["./assets/dots.png"] $ \assets -> do
+        let instructions = createRenderInstructions assets
+        repeatUntilTrue $ draw renderer instructions >> handleNoInput pollEvent
     SDL.destroyRenderer renderer
 
 type RenderInstructions = SDL.Renderer -> IO ()
 
-createRenderInstructions :: (SDL.Texture, CInt, CInt) -> RenderInstructions
-createRenderInstructions (texture, width, height) renderer = do
+createRenderInstructions :: [Asset] -> RenderInstructions
+createRenderInstructions assets renderer = do
     _ <- renderTexture' topLeftMask topLeftPosition
     _ <- renderTexture' topRightMask topRightPosition
     _ <- renderTexture' bottomLeftMask bottomLeftPosition
     _ <- renderTexture' bottomRightMask bottomRightPosition
     return ()
 
-    where renderTexture' = renderTexture renderer texture
+    where (texture, width, height) = head assets
+          renderTexture' = renderTexture renderer texture
           dotMask = SDL.Rect { rectX = 0, rectY = 0, rectW = width `div` 2, rectH = height `div` 2 }
           topLeftMask     = dotMask `moveTo` (  0,   0)
           topRightMask    = dotMask `moveTo` (100,   0)

@@ -38,6 +38,9 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
 data Colour = Red | Green | Blue
 data World = World { gameover :: Bool, red :: Word8, green :: Word8, blue :: Word8 }
 
+--Input -> Intent -> World ->? Render
+--keypress -> increaseRed -> updateWorld -> draw
+
 drawWorld :: SDL.Renderer -> [Asset] -> World -> IO World
 drawWorld renderer assets state@(World False r g b) = do
     _ <- SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF

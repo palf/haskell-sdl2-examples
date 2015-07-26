@@ -6,11 +6,10 @@ import Foreign.Ptr
 import GHC.Word
 import Graphics.UI.SDL.Types
 import Shared.Drawing
-import Shared.Image
 import Shared.Input
 import Shared.Lifecycle
+import Shared.Assets
 import Shared.Polling
-import Shared.Textures
 import Shared.Utilities
 import Shared.State
 import qualified Graphics.UI.SDL as SDL
@@ -34,32 +33,31 @@ fullWindow = SDL.Rect {
     rectH = snd size }
 
 initialState :: World
-initialState = World { gameover = False, alpha = 128 }
+initialState = World { gameover = False, alpha = 0 }
 
 
 main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
-    textures <- mapM (loadTextureAsSurface renderer) ["./assets/fadein.png", "./assets/fadeout.png"]
-    let inputSource = pollEvent `into` updateState
-    let pollDraw = inputSource ~>~ drawWorld renderer textures
-    _ <- runStateT (repeatUntilComplete pollDraw) initialState
-    destroyTextures textures
+    withAssets renderer ["./assets/fadein.png", "./assets/fadeout.png"] $ \assets -> do
+        let inputSource = pollEvent `into` updateState
+        let pollDraw = inputSource ~>~ drawWorld renderer assets
+        runStateT (repeatUntilComplete pollDraw) initialState
     SDL.destroyRenderer renderer
 
 
 data ColourProperty = Alpha
 data World = World { gameover :: Bool, alpha :: Word8 }
 
-
-drawWorld :: SDL.Renderer -> [SDL.Texture] -> World -> IO ()
+drawWorld :: SDL.Renderer -> [Asset] -> World -> IO ()
 drawWorld renderer assets (World False alphaValue) = withBlankScreen renderer $ do
-    let background = head assets
-    let foreground = assets !! 1
-    _ <- with fullWindow $ SDL.renderCopy renderer background nullPtr
+    let (background, _, _) = head assets
+    let (foreground, _, _) = assets !! 1
     _ <- SDL.setTextureAlphaMod foreground alphaValue
-    with fullWindow $ SDL.renderCopy renderer foreground nullPtr
+    _ <- with fullWindow $ SDL.renderCopy renderer background nullPtr
+    _ <- with fullWindow $ SDL.renderCopy renderer foreground nullPtr
+    return ()
 drawWorld _ _ _ = return ()
 
 updateState :: Input -> World -> World
@@ -83,15 +81,4 @@ repeatUntilComplete :: (Monad m) => m World -> m ()
 repeatUntilComplete game = do
     state <- game
     unless (gameover state) $ repeatUntilComplete game
-
-loadTextureAsSurface :: SDL.Renderer -> String -> IO SDL.Texture
-loadTextureAsSurface renderer path = do
-    loadedSurface <- imgLoadSurface path >>= either throwSDLError return
-    let applyToSurface = flip applyToPointer loadedSurface
-    pixelFormat <- applyToSurface SDL.surfaceFormat
-    key <- SDL.mapRGB pixelFormat 0 0xFF 0xFF
-    _ <- SDL.setColorKey loadedSurface 1 key
-    newTexture <- createTextureFromSurface renderer loadedSurface >>= either throwSDLError return
-    SDL.freeSurface loadedSurface
-    return newTexture
 
