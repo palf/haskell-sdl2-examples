@@ -17,7 +17,7 @@ import Shared.State
 
 
 title :: String
-title = "lesson15"
+title = "lesson17"
 
 size :: ScreenSize
 size = (640, 480)

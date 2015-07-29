@@ -161,8 +161,11 @@ executable lesson17
                        mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
-  ghc-options:         -Wall
-
+  ghc-options:         -Wall -auto-all
+                       -O2
+                       -threaded
+                       -fprof-auto
+                       "-with-rtsopts=-N -p -s -h -i0.1"
 
 executable lesson19
   main-is:             lesson19.hs
