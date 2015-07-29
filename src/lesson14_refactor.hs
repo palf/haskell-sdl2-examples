@@ -138,7 +138,7 @@ withSDLContext renderOperation = do
 
 
 sdlCleanup :: Either SDLError (SDL.Window, SDL.Renderer) -> (SDL.Renderer -> IO a) -> IO ()
-sdlCleanup (Left someError) _ = handleNoInputSDLError error someError
+sdlCleanup (Left someError) _ = pollForQuitSDLError error someError
 sdlCleanup (Right (window, renderer)) renderOperation = do
     _ <- renderOperation renderer
     SDL.destroyRenderer renderer
@@ -194,60 +194,6 @@ createRenderer window index flags = do
         else return renderer
 
 
-withAssets :: SDL.Renderer -> [FilePath] -> ([Asset] -> IO a) -> IO ()
-withAssets renderer paths f = do
-    maybeAssets <- runExceptT $ mapM (loadTexture renderer) paths
-    cleanupAssets maybeAssets f
-
-
-cleanupAssets :: Either SDLError [Asset] -> ([Asset] -> IO a) -> IO ()
-cleanupAssets (Left someError) _ = handleNoInputSDLError error someError
-cleanupAssets (Right assets) f = f assets >> mapM_ freeAsset assets
-
-
-freeAsset :: Asset -> IO ()
-freeAsset (ImageAsset tex) = SDL.destroyTexture tex
-
-
----- Surfacing & Texture Loading ----
-
-loadSurface :: String -> SDLRisky (Ptr SDL.Surface)
-loadSurface path = do
-    surface <- liftIO $ withCAString path Image.load
-    if surface == nullPtr
-        then throwSDLError (SurfaceError path)
-        else return surface
-
-
-loadTexture :: SDL.Renderer -> String -> SDLRisky Asset
-loadTexture renderer path = do
-    loadedSurface <- loadSurface path
-    let applyToSurface = flip applyToPointer loadedSurface
-
-    pixelFormat <- liftIO $ applyToSurface SDL.surfaceFormat
-    key <- liftIO $ SDL.mapRGB pixelFormat 0 0xFF 0xFF
-
-    _ <- liftIO $ SDL.setColorKey loadedSurface 1 key
-    newTexture <- createTextureFromSurface renderer loadedSurface
-
-    liftIO $ SDL.freeSurface loadedSurface
-    if newTexture == nullPtr
-        then throwSDLError TextureError
-        else return (ImageAsset newTexture)
-
-
-createTextureFromSurface :: SDL.Renderer -> Ptr SDL.Surface -> SDLRisky Texture
-createTextureFromSurface renderer surface = do
-    result <- liftIO $ SDL.createTextureFromSurface renderer surface
-    if result == nullPtr
-        then throwSDLError TextureError
-        else return result
-
-
-renderTexture :: SDL.Renderer -> SDL.Texture -> SDL.Rect -> SDL.Rect -> IO CInt
-renderTexture renderer texture renderMask renderQuad = with2 renderMask renderQuad $ SDL.renderCopy renderer texture
-
-
 ---- Error Handling ----
 
 type SDLRisky = ExceptT SDLError IO
@@ -259,15 +205,15 @@ data SDLError = SDLInitError String
               | TextureError
 
 
-handleNoInputSDLError :: (MonadIO m) => (String -> IO a) -> SDLError -> m a
-handleNoInputSDLError handleNoInput errorType = do
+pollForQuitSDLError :: (MonadIO m) => (String -> IO a) -> SDLError -> m a
+pollForQuitSDLError pollForQuit errorType = do
     let message = getSDLErrorMessage errorType
     errorString <- liftIO (SDL.getError >>= peekCString)
-    liftIO $ handleNoInput (message ++ " SDL_Error: " ++ errorString)
+    liftIO $ pollForQuit (message ++ " SDL_Error: " ++ errorString)
 
 
 logSDLError :: (MonadIO m) => SDLError -> m ()
-logSDLError = handleNoInputSDLError print
+logSDLError = pollForQuitSDLError print
 
 
 throwSDLError :: SDLError -> SDLRisky a

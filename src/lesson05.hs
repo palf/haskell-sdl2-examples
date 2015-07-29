@@ -33,7 +33,7 @@ main = inWindow $ \window -> do
     stretchedSurface <- optimizeSurface imageSurface pixelFormat 0 >>= either throwSDLError return
     let draw surface stretch = with stretch (SDL.blitScaled surface nullPtr screenSurface) >> SDL.updateWindowSurface window
     let stretchRect = fullWindow
-    repeatUntilTrue $ draw stretchedSurface stretchRect >> handleNoInput pollEvent
+    repeatUntilTrue $ draw stretchedSurface stretchRect >> pollForQuit pollEvent
     SDL.freeSurface imageSurface
     SDL.freeSurface stretchedSurface
     SDL.freeSurface screenSurface

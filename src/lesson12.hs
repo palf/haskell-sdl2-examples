@@ -11,7 +11,7 @@ import Shared.Input
 import Shared.Lifecycle
 import Shared.Polling
 import Shared.Utilities
-import Shared.State
+import Shared.Drawing
 
 title :: String
 title = "lesson12"
@@ -22,70 +22,95 @@ size = (640, 480)
 inWindow :: (SDL.Window -> IO ()) -> IO ()
 inWindow = withSDL . withWindow title size
 
-initialState :: World
-initialState = World { gameover = False, red = 128, green = 128, blue = 128 }
+initialWorld :: World
+initialWorld = World { gameover = False, red = 128, green = 128, blue = 128 }
 
 main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
-    withAssets renderer ["./assets/colors.png"] $ \assets -> do
-        let inputSource = pollEvent `into` updateState
-        let pollDraw = inputSource ~>> drawWorld renderer assets
-        runStateT (repeatUntilComplete pollDraw) initialState
+    withAssets renderer ["./assets/colors.png"] $ runGame renderer
     SDL.destroyRenderer renderer
 
+runGame :: SDL.Renderer -> [Asset] -> IO ()
+runGame renderer assets = repeatUntilGameover updateSource drawWorld initialWorld
+    where drawWorld = draw renderer assets
+
+updateSource :: IO (UpdateWorld)
+updateSource = createUpdateFunction collectEvents
+
+data World = World { gameover :: Bool, red :: Word8, green :: Word8, blue :: Word8 } deriving (Show)
 data Colour = Red | Green | Blue
-data World = World { gameover :: Bool, red :: Word8, green :: Word8, blue :: Word8 }
+data Intent = Increase Colour | Decrease Colour | DoNothing | Quit
+type UpdateWorld = World -> World
 
---Input -> Intent -> World ->? Render
---keypress -> increaseRed -> updateWorld -> draw
+createUpdateFunction :: (Monad m, Functor f, Foldable f) => m (f SDL.Event) -> m (UpdateWorld)
+createUpdateFunction input = do
+    events <- input
+    let intents = fmap eventToIntent events
+    return $ \world -> foldl (flip applyIntent) world intents
 
-drawWorld :: SDL.Renderer -> [Asset] -> World -> IO World
-drawWorld renderer assets world@(World False r g b) = do
-    _ <- SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
-    _ <- SDL.renderClear renderer
-    _ <- SDL.setTextureColorMod texture r g b
-    _ <- renderTexture' position
-    _ <- SDL.renderPresent renderer
-    return world
+eventToIntent :: SDL.Event -> Intent
+eventToIntent (SDL.QuitEvent _ _) = Quit
+eventToIntent (SDL.KeyboardEvent evtType _ _ _ _ keysym)
+ | evtType == SDL.SDL_KEYDOWN = inputToIntent (getKey keysym)
+ | otherwise                  = DoNothing
+eventToIntent _ = DoNothing
+
+inputToIntent :: KeyPress -> Intent
+inputToIntent key = case key of
+    Q -> Increase Red
+    W -> Increase Green
+    E -> Increase Blue
+    A -> Decrease Red
+    S -> Decrease Green
+    D -> Decrease Blue
+    _ -> DoNothing
+
+applyIntent :: Intent -> UpdateWorld
+applyIntent (Increase color) = increase color
+applyIntent (Decrease color) = decrease color
+applyIntent DoNothing = id
+applyIntent Quit = quit
+
+increase :: Colour -> UpdateWorld
+increase Red world = world { red = red world + 16 }
+increase Green world = world { green = green world + 16 }
+increase Blue world = world { blue = blue world + 16 }
+
+decrease :: Colour -> UpdateWorld
+decrease Red world = world { red = red world - 16 }
+decrease Green world = world { green = green world - 16 }
+decrease Blue world = world { blue = blue world - 16 }
+
+quit :: UpdateWorld
+quit world = world { gameover = True }
+
+repeatUntilGameover :: (Monad m) => m (UpdateWorld) -> (World -> m ()) -> World -> m ()
+repeatUntilGameover updateFunc drawFunc = go
+  where go world = updateFunc <*> pure world >>= \world' ->
+          drawFunc world' >> unless (gameover world') (go world')
+
+draw :: SDL.Renderer -> [Asset] -> World -> IO ()
+draw renderer assets world = do
+    let instructions = writeRenderInstructions assets world
+    withBlankScreen renderer $ executeRender renderer instructions
+
+data RenderInstruction =
+    SetTextureColor SDL.Texture Word8 Word8 Word8 |
+    RenderCopy SDL.Texture SDL.Rect
+
+writeRenderInstructions :: [Asset] -> World -> [RenderInstruction]
+writeRenderInstructions assets (World _ r g b) = [
+    SetTextureColor texture r g b ,
+    RenderCopy texture position ]
     where (texture, width, height) = head assets
-          renderTexture' renderQuad = with renderQuad $ SDL.renderCopy renderer texture nullPtr
           position = SDL.Rect { rectX = 0, rectY = 0, rectW = width, rectH = height }
-drawWorld _ _ world = return world
 
-updateState :: (Foldable f) => f SDL.Event -> World -> World
-updateState events world = foldl applyEvent world events
+executeRender :: (Foldable f) => SDL.Renderer -> f RenderInstruction -> IO ()
+executeRender renderer = mapM_ (executeInstruction renderer)
 
-applyEvent :: World -> SDL.Event -> World
-applyEvent world (SDL.QuitEvent _ _) = world { gameover = True }
-applyEvent world (SDL.KeyboardEvent evtType _ _ _ _ keysym)
- | evtType == SDL.SDL_KEYDOWN = modifyState world keysym 
- | otherwise                  = world
-applyEvent world _ = world
-
-modifyState :: World -> SDL.Keysym -> World
-modifyState world keysym = case getKey keysym of
-    Q -> world `increase` Red
-    W -> world `increase` Green
-    E -> world `increase` Blue
-    A -> world `decrease` Red
-    S -> world `decrease` Green
-    D -> world `decrease` Blue
-    _ -> world
-
-repeatUntilComplete :: (Monad m) => m World -> m ()
-repeatUntilComplete game = do
-    world <- game
-    unless (gameover world) $ repeatUntilComplete game
-
-increase :: World -> Colour -> World
-increase world Red = world { red = red world + 16 }
-increase world Green = world { green = green world + 16 }
-increase world Blue = world { blue = blue world + 16 }
-
-decrease :: World -> Colour -> World
-decrease world Red = world { red = red world - 16 }
-decrease world Green = world { green = green world - 16 }
-decrease world Blue = world { blue = blue world - 16 }
+executeInstruction :: SDL.Renderer -> RenderInstruction -> IO ()
+executeInstruction _ (SetTextureColor texture r g b) = void $ SDL.setTextureColorMod texture r g b
+executeInstruction renderer (RenderCopy texture position) = void $ with position $ SDL.renderCopy renderer texture nullPtr
 

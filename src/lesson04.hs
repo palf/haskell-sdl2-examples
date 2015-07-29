@@ -34,18 +34,29 @@ surfacePaths = [
     "./assets/left.bmp" ,
     "./assets/right.bmp" ]
 
-selectSurface :: forall a. [a] -> KeyDirection -> a
+selectSurface :: forall a. [a] -> KeyPress -> a
 selectSurface surfaces KeyUp = surfaces !! 1
 selectSurface surfaces KeyDown = surfaces !! 2
 selectSurface surfaces KeyLeft = surfaces !! 3
 selectSurface surfaces KeyRight = surfaces !! 4
 selectSurface surfaces _ = head surfaces
 
+handleKeyInput :: IO (Maybe SDL.Event) -> (KeyPress -> IO a) -> IO Bool
+handleKeyInput stream keyHandler = do
+    maybeEvent <- stream
+    case maybeEvent of
+        Nothing -> return False
+        Just (SDL.QuitEvent _ _) -> return True
+        Just (SDL.KeyboardEvent _ _ _ _ _ keysym) -> do
+            _ <- keyHandler $ getKey keysym
+            return False
+        _ -> return False
+
 main :: IO ()
 main = drawInWindow $ \draw -> do
     surfaces <- mapM getSurfaceFrom surfacePaths
     let drawSurfaceForKey = draw . selectSurface surfaces
     _ <- draw (head surfaces)
-    _ <- repeatUntilTrue $ handleKeyInput pollEvent drawSurfaceForKey
+    repeatUntilTrue $ handleKeyInput pollEvent drawSurfaceForKey
     mapM_ SDL.freeSurface surfaces
 

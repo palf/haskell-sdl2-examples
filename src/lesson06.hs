@@ -26,6 +26,6 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     imageSurface <- optimizeSurface loadedSurface pixelFormat 0 >>= either throwSDLError return
     _ <- SDL.freeSurface loadedSurface
     let draw surface = SDL.blitScaled surface nullPtr screenSurface nullPtr >> SDL.updateWindowSurface window
-    repeatUntilTrue $ draw imageSurface >> handleNoInput pollEvent
+    repeatUntilTrue $ draw imageSurface >> pollForQuit pollEvent
     SDL.freeSurface imageSurface
 

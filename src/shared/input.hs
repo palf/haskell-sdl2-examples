@@ -1,11 +1,9 @@
 module Shared.Input (
     Input,
     Inputs,
-    handleNoInput,
+    pollForQuit,
 
-    KeyDirection  (..),
-    Key (..),
-    handleKeyInput,
+    KeyPress (..),
     getKey
 ) where
 
@@ -15,11 +13,10 @@ import Shared.Input.Keys
 type Input = Maybe SDL.Event
 type Inputs = [SDL.Event]
 
-handleNoInput :: IO (Maybe SDL.Event) -> IO Bool
-handleNoInput stream = do
+pollForQuit :: IO (Maybe SDL.Event) -> IO Bool
+pollForQuit stream = do
     maybeEvent <- stream
     case maybeEvent of
-        Nothing -> return False
         Just (SDL.QuitEvent _ _) -> return True
         _ -> return False
 

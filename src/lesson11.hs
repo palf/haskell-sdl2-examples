@@ -26,7 +26,7 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
     withAssets renderer ["./assets/dots.png"] $ \assets -> do
         let instructions = createRenderInstructions assets
-        repeatUntilTrue $ draw renderer instructions >> handleNoInput pollEvent
+        repeatUntilTrue $ draw renderer instructions >> pollForQuit pollEvent
     SDL.destroyRenderer renderer
 
 type RenderInstructions = SDL.Renderer -> IO ()

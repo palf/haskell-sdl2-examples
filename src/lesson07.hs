@@ -24,7 +24,7 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
     _ <- SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
     texture <- loadTexture renderer "./assets/texture.png"
-    repeatUntilTrue $ draw renderer texture >> handleNoInput pollEvent
+    repeatUntilTrue $ draw renderer texture >> pollForQuit pollEvent
     SDL.destroyTexture texture
     SDL.destroyRenderer renderer
 

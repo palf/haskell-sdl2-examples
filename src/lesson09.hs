@@ -22,7 +22,7 @@ main :: IO ()
 main = inWindow $ withRenderer $ \renderer -> do
     _ <- SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
     texture <- loadTexture renderer "./assets/viewport.png"
-    repeatUntilTrue $ draw renderer texture >> handleNoInput pollEvent
+    repeatUntilTrue $ draw renderer texture >> pollForQuit pollEvent
     SDL.destroyTexture texture
 
 draw :: SDL.Renderer -> SDL.Texture -> IO ()

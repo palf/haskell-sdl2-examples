@@ -24,7 +24,7 @@ main = inWindow (withRenderer doRender)
 doRender :: SDL.Renderer -> IO ()
 doRender renderer = do
     _ <- SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
-    repeatUntilTrue $ drawAll renderer >> handleNoInput pollEvent
+    repeatUntilTrue $ drawAll renderer >> pollForQuit pollEvent
 
 data Colour = White | Red | Blue | Green | Yellow
 
