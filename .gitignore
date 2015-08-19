@@ -12,3 +12,5 @@ cabal.sandbox.config
 cabal.config
 *.hp
 *.prof
+*.aux
+*.ps
