@@ -7,7 +7,6 @@ import qualified Graphics.UI.SDL as SDL
 import qualified Graphics.UI.SDL.Image as Image
 import Graphics.UI.SDL.Types
 import Control.Monad.State hiding (state)
-import Shared.Input
 import Shared.Drawing
 import Shared.Lifecycle
 import Shared.Geometry
@@ -32,9 +31,6 @@ fullWindow = SDL.Rect {
     rectY = 0,
     rectW = fst size,
     rectH = snd size }
-
---fullWindow :: SDL.Rect
---fullWindow = toRect 0 0 screenWidth screenHeight
 
 initialState :: World
 initialState = World { gameover = False, frame = 0 }
@@ -63,12 +59,16 @@ drawWorld renderer assets (World False frameValue) = withBlankScreen renderer $ 
 drawWorld _ _ _ = return ()
 
 updateState :: (Foldable f) => f SDL.Event -> World -> World
-updateState es world = foldl applyEvent world es
+updateState events world = foldl applyEvent world' events
+  where world' = incrementFrame world
 
 applyEvent :: World -> SDL.Event -> World
-applyEvent state (SDL.QuitEvent _ _) = state { gameover = True }
-applyEvent state _ = state { frame = frame state + 1 }
+applyEvent world (SDL.QuitEvent _ _) = world { gameover = True }
+applyEvent world _ = world
+
+incrementFrame :: World -> World
+incrementFrame world = world { frame = frame world + 1 }
 
 repeatUntilComplete :: (Monad m) => m World -> m ()
-repeatUntilComplete game = game >>= \state -> unless (gameover state) $ repeatUntilComplete game
+repeatUntilComplete game = game >>= \world -> unless (gameover world) $ repeatUntilComplete game
 

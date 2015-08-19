@@ -7,7 +7,6 @@ import qualified Graphics.UI.SDL as SDL
 import qualified Graphics.UI.SDL.Image as Image
 import Graphics.UI.SDL.Types
 import Control.Monad.State hiding (state)
-import Shared.Input
 import Shared.Assets
 import Shared.Drawing
 import Shared.Lifecycle
@@ -80,18 +79,18 @@ allPositions :: [Position]
 allPositions = [minBound .. ]
 
 updateState :: (Foldable f) => f SDL.Event -> World -> World
-updateState es state = foldl applyEvent state es
+updateState events world = foldl applyEvent world events
 
 applyEvent :: World -> SDL.Event -> World
-applyEvent state (SDL.QuitEvent _ _) = state { gameover = True }
-applyEvent state (SDL.MouseMotionEvent _ _ _ _ _ x y _ _) = state { quadrants = updatedEntities }
+applyEvent world (SDL.QuitEvent _ _) = world { gameover = True }
+applyEvent world (SDL.MouseMotionEvent _ _ _ _ _ x y _ _) = world { quadrants = updatedEntities }
     where updatedEntities = map (makeNewEntity (x, y) MouseOver) allPositions
-applyEvent state (SDL.MouseButtonEvent evtType _ _ _ _ _ _ x y)
-    | evtType == SDL.SDL_MOUSEBUTTONDOWN = state { quadrants = updatedEntities MouseDown }
-    | evtType == SDL.SDL_MOUSEBUTTONUP = state { quadrants = updatedEntities MouseUp }
-    | otherwise = state
+applyEvent world (SDL.MouseButtonEvent evtType _ _ _ _ _ _ x y)
+    | evtType == SDL.SDL_MOUSEBUTTONDOWN = world { quadrants = updatedEntities MouseDown }
+    | evtType == SDL.SDL_MOUSEBUTTONUP = world { quadrants = updatedEntities MouseUp }
+    | otherwise = world
     where updatedEntities ms = map (makeNewEntity (x, y) ms) allPositions
-applyEvent state _ = state
+applyEvent world _ = world
 
 makeNewEntity :: (Integral a) => (a, a) -> EntityState -> Position -> Entity
 makeNewEntity (x', y') ms pos = Entity { mouseState = newState, position = pos }
@@ -105,7 +104,7 @@ getMouseState pos (x, y) ms
     where n = positionToPoint pos
 
 repeatUntilComplete :: (Monad m) => m World -> m ()
-repeatUntilComplete game = game >>= \state -> unless (gameover state) $ repeatUntilComplete game
+repeatUntilComplete game = game >>= \world -> unless (gameover world) $ repeatUntilComplete game
 
 toRect :: (Integral a) => a -> a -> a -> a -> SDL.Rect
 toRect x y w h = SDL.Rect { rectX = fromIntegral x, rectY = fromIntegral y, rectW = fromIntegral w, rectH = fromIntegral h }

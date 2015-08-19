@@ -9,7 +9,6 @@ import Foreign.Ptr
 import GHC.Word
 import Graphics.UI.SDL.Types
 import Shared.Drawing
-import Shared.Input
 import Shared.Geometry
 import Shared.Lifecycle
 import Shared.Polling
@@ -61,8 +60,8 @@ disableEventPolling = mapM_ (`SDL.eventState` 0)
 
 
 drawWorld :: SDL.Renderer -> [SDL.Texture] -> World -> IO ()
-drawWorld renderer assets state = withBlankScreen renderer $ do
-    inputState <- getControllerState (getController state)
+drawWorld renderer assets world = withBlankScreen renderer $ do
+    inputState <- getControllerState (getController world)
     with2 mask (position inputState) $ \mask' position' ->
         SDL.renderCopyEx renderer texture mask' position' degrees' nullPtr SDL.SDL_FLIP_NONE
     where texture = head assets
@@ -101,12 +100,12 @@ getAxisState controller index = do
     return $ fromIntegral axis
 
 updateState :: (Foldable f) => f SDL.Event -> World -> World
-updateState es world = foldl applyEvent world es
+updateState events world = foldl applyEvent world events
 
 applyEvent :: World -> SDL.Event -> World
-applyEvent state (SDL.QuitEvent _ _) = state { gameover = True }
-applyEvent state _ = state
+applyEvent world (SDL.QuitEvent _ _) = world { gameover = True }
+applyEvent world _ = world
 
 repeatUntilComplete :: (Monad m) => m World -> m ()
-repeatUntilComplete game = game >>= \state -> unless (gameover state) (repeatUntilComplete game)
+repeatUntilComplete game = game >>= \world -> unless (gameover world) (repeatUntilComplete game)
 

@@ -42,48 +42,50 @@ data World = World { gameover :: Bool, red :: Word8, green :: Word8, blue :: Wor
 --keypress -> increaseRed -> updateWorld -> draw
 
 drawWorld :: SDL.Renderer -> [Asset] -> World -> IO World
-drawWorld renderer assets state@(World False r g b) = do
+drawWorld renderer assets world@(World False r g b) = do
     _ <- SDL.setRenderDrawColor renderer 0xFF 0xFF 0xFF 0xFF
     _ <- SDL.renderClear renderer
     _ <- SDL.setTextureColorMod texture r g b
     _ <- renderTexture' position
     _ <- SDL.renderPresent renderer
-    return state
+    return world
     where (texture, width, height) = head assets
           renderTexture' renderQuad = with renderQuad $ SDL.renderCopy renderer texture nullPtr
           position = SDL.Rect { rectX = 0, rectY = 0, rectW = width, rectH = height }
-drawWorld _ _ state = return state
+drawWorld _ _ world = return world
 
 updateState :: (Foldable f) => f SDL.Event -> World -> World
-updateState es world = foldl applyEvent world es
+updateState events world = foldl applyEvent world events
 
 applyEvent :: World -> SDL.Event -> World
-applyEvent state (SDL.QuitEvent _ _) = state { gameover = True }
-applyEvent state (SDL.KeyboardEvent evtType _ _ _ _ keysym) = if evtType == SDL.SDL_KEYDOWN then modifyState state keysym else state
-applyEvent state _ = state
+applyEvent world (SDL.QuitEvent _ _) = world { gameover = True }
+applyEvent world (SDL.KeyboardEvent evtType _ _ _ _ keysym)
+ | evtType == SDL.SDL_KEYDOWN = modifyState world keysym 
+ | otherwise                  = world
+applyEvent world _ = world
 
 modifyState :: World -> SDL.Keysym -> World
-modifyState state keysym = case getKey keysym of
-    Q -> state `increase` Red
-    W -> state `increase` Green
-    E -> state `increase` Blue
-    A -> state `decrease` Red
-    S -> state `decrease` Green
-    D -> state `decrease` Blue
-    _ -> state
+modifyState world keysym = case getKey keysym of
+    Q -> world `increase` Red
+    W -> world `increase` Green
+    E -> world `increase` Blue
+    A -> world `decrease` Red
+    S -> world `decrease` Green
+    D -> world `decrease` Blue
+    _ -> world
 
 repeatUntilComplete :: (Monad m) => m World -> m ()
 repeatUntilComplete game = do
-    state <- game
-    unless (gameover state) $ repeatUntilComplete game
+    world <- game
+    unless (gameover world) $ repeatUntilComplete game
 
 increase :: World -> Colour -> World
-increase state Red = state { red = red state + 16 }
-increase state Green = state { green = green state + 16 }
-increase state Blue = state { blue = blue state + 16 }
+increase world Red = world { red = red world + 16 }
+increase world Green = world { green = green world + 16 }
+increase world Blue = world { blue = blue world + 16 }
 
 decrease :: World -> Colour -> World
-decrease state Red = state { red = red state - 16 }
-decrease state Green = state { green = green state - 16 }
-decrease state Blue = state { blue = blue state - 16 }
+decrease world Red = world { red = red world - 16 }
+decrease world Green = world { green = green world - 16 }
+decrease world Blue = world { blue = blue world - 16 }
 

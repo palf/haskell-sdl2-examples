@@ -6,17 +6,14 @@ import Foreign.Marshal.Alloc
 import Foreign.Marshal.Utils
 import Foreign.Storable
 
+-- TODO: similar to Control.Monad.Loops, maybe replace?
+repeatUntil :: (Monad m) => m Bool -> m a -> m ()
+repeatUntil p f = go
+    where go = f >> p >>= flip unless go
 
-repeatUntil :: IO Bool -> IO a -> IO ()
-repeatUntil quitClause operation = do
-    _ <- operation
-    isQuitting <- quitClause
-    unless isQuitting $ repeatUntil quitClause operation
-
-repeatUntilTrue :: IO Bool -> IO ()
-repeatUntilTrue operation = do
-    isTrue <- operation
-    unless isTrue $ repeatUntilTrue operation
+repeatUntilTrue :: (Monad m) => m Bool -> m ()
+repeatUntilTrue p = go
+  where go = p >>= flip unless go
 
 sdlQuit :: IO Bool
 sdlQuit = liftM isQuitEvent pollEvent
@@ -31,16 +28,15 @@ pollEvent :: IO (Maybe SDL.Event)
 pollEvent = alloca $ \pointer -> do
     status <- SDL.pollEvent pointer
     if status == 1
-        then maybePeek peek pointer
-        else return Nothing
+       then maybePeek peek pointer
+       else return Nothing
 
 collectEvents :: IO [SDL.Event]
 collectEvents = do
-    event <- pollEvent
-    case event of
+    maybeEvent <- pollEvent
+    case maybeEvent of
       Nothing -> return []
-      Just thing -> do
-          print thing
+      Just event -> do
           events <- collectEvents
-          return $ thing : events
+          return $ event : events
 

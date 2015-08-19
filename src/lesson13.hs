@@ -61,29 +61,29 @@ drawWorld renderer assets (World False alphaValue) = withBlankScreen renderer $ 
 drawWorld _ _ _ = return ()
 
 updateState :: (Foldable f) => f SDL.Event -> World -> World
-updateState es world = foldl applyEvent world es
+updateState events world = foldl applyEvent world events
 
 applyEvent :: World -> SDL.Event -> World
-applyEvent state (SDL.KeyboardEvent evtType _ _ _ _ keysym)
-  | evtType == SDL.SDL_KEYDOWN = modifyState state keysym
-  | otherwise = state
-applyEvent state (SDL.QuitEvent _ _) = state { gameover = True }
-applyEvent state _ = state
+applyEvent world (SDL.KeyboardEvent evtType _ _ _ _ keysym)
+  | evtType == SDL.SDL_KEYDOWN = modifyState world keysym
+  | otherwise = world
+applyEvent world (SDL.QuitEvent _ _) = world { gameover = True }
+applyEvent world _ = world
 
 modifyState :: World -> SDL.Keysym -> World
-modifyState state keysym = case getKey keysym of
-    W -> state `increase` Alpha
-    S -> state `decrease` Alpha
-    _ -> state
+modifyState world keysym = case getKey keysym of
+    W -> world `increase` Alpha
+    S -> world `decrease` Alpha
+    _ -> world
 
 increase :: World -> ColourProperty -> World
-increase state Alpha = state { alpha = alpha state + 16 }
+increase world Alpha = world { alpha = alpha world + 16 }
 
 decrease :: World -> ColourProperty -> World
-decrease state Alpha = state { alpha = alpha state - 16 }
+decrease world Alpha = world { alpha = alpha world - 16 }
 
 repeatUntilComplete :: (Monad m) => m World -> m ()
 repeatUntilComplete game = do
-    state <- game
-    unless (gameover state) $ repeatUntilComplete game
+    world <- game
+    unless (gameover world) $ repeatUntilComplete game
 

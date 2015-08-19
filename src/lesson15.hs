@@ -50,36 +50,36 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
 data World = World { gameover :: Bool, degrees :: Int, flipType :: SDL.RendererFlip }
 
 drawWorld :: SDL.Renderer -> [Asset] -> World -> IO ()
-drawWorld renderer assets state = withBlankScreen renderer $
+drawWorld renderer assets world = withBlankScreen renderer $
     with2 mask position $ \mask' position' ->
-        SDL.renderCopyEx renderer texture mask' position' degrees' nullPtr (flipType state)
+        SDL.renderCopyEx renderer texture mask' position' degrees' nullPtr (flipType world)
 
     where (texture, w, h) = head assets
           sprite = toRect 0 0 w h
           mask = sprite
           position = sprite `centredOn` fullWindow
-          degrees' = fromIntegral (degrees state)
+          degrees' = fromIntegral (degrees world)
 
 updateState :: (Foldable f) => f SDL.Event -> World -> World
-updateState es world = foldl applyEvent world es
+updateState events world = foldl applyEvent world events
 
 applyEvent :: World -> SDL.Event -> World
-applyEvent state (SDL.QuitEvent _ _) = state { gameover = True }
-applyEvent state (SDL.KeyboardEvent evtType _ _ _ _ keysym) = if evtType == SDL.SDL_KEYDOWN
-    then modifyState state keysym
-    else state
-applyEvent state _ = state
+applyEvent world (SDL.QuitEvent _ _) = world { gameover = True }
+applyEvent world (SDL.KeyboardEvent evtType _ _ _ _ keysym) = if evtType == SDL.SDL_KEYDOWN
+    then modifyState world keysym
+    else world
+applyEvent world _ = world
 
 modifyState :: World -> SDL.Keysym -> World
-modifyState state keysym = case getKey keysym of
-    Q -> state { flipType = SDL.SDL_FLIP_HORIZONTAL }
-    W -> state { flipType = SDL.SDL_FLIP_NONE }
-    E -> state { flipType = SDL.SDL_FLIP_VERTICAL }
-    A -> state { degrees = degrees state - 15 }
-    D -> state { degrees = degrees state + 15 }
-    S -> state { degrees = 0, flipType = SDL.SDL_FLIP_NONE }
-    _ -> state
+modifyState world keysym = case getKey keysym of
+    Q -> world { flipType = SDL.SDL_FLIP_HORIZONTAL }
+    W -> world { flipType = SDL.SDL_FLIP_NONE }
+    E -> world { flipType = SDL.SDL_FLIP_VERTICAL }
+    A -> world { degrees = degrees world - 15 }
+    D -> world { degrees = degrees world + 15 }
+    S -> world { degrees = 0, flipType = SDL.SDL_FLIP_NONE }
+    _ -> world
 
 repeatUntilComplete :: (Monad m) => m World -> m ()
-repeatUntilComplete game = game >>= \state -> unless (gameover state) $ repeatUntilComplete game
+repeatUntilComplete game = game >>= \world -> unless (gameover world) $ repeatUntilComplete game
 
