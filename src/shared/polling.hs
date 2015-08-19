@@ -34,3 +34,13 @@ pollEvent = alloca $ \pointer -> do
         then maybePeek peek pointer
         else return Nothing
 
+collectEvents :: IO [SDL.Event]
+collectEvents = do
+    event <- pollEvent
+    case event of
+      Nothing -> return []
+      Just thing -> do
+          print thing
+          events <- collectEvents
+          return $ thing : events
+

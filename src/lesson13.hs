@@ -60,10 +60,15 @@ drawWorld renderer assets (World False alphaValue) = withBlankScreen renderer $ 
     return ()
 drawWorld _ _ _ = return ()
 
-updateState :: Input -> World -> World
-updateState (Just (SDL.KeyboardEvent evtType _ _ _ _ keysym)) state = if evtType == SDL.SDL_KEYDOWN then modifyState state keysym else state
-updateState (Just (SDL.QuitEvent _ _)) state = state { gameover = True }
-updateState _ state = state
+updateState :: (Foldable f) => f SDL.Event -> World -> World
+updateState es world = foldl applyEvent world es
+
+applyEvent :: World -> SDL.Event -> World
+applyEvent state (SDL.KeyboardEvent evtType _ _ _ _ keysym)
+  | evtType == SDL.SDL_KEYDOWN = modifyState state keysym
+  | otherwise = state
+applyEvent state (SDL.QuitEvent _ _) = state { gameover = True }
+applyEvent state _ = state
 
 modifyState :: World -> SDL.Keysym -> World
 modifyState state keysym = case getKey keysym of

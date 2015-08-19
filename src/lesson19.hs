@@ -100,9 +100,12 @@ getAxisState controller index = do
     axis <- SDL.gameControllerGetAxis controller index
     return $ fromIntegral axis
 
-updateState :: Input -> World -> World
-updateState (Just (SDL.QuitEvent _ _)) state = state { gameover = True }
-updateState _ state = state
+updateState :: (Foldable f) => f SDL.Event -> World -> World
+updateState es world = foldl applyEvent world es
+
+applyEvent :: World -> SDL.Event -> World
+applyEvent state (SDL.QuitEvent _ _) = state { gameover = True }
+applyEvent state _ = state
 
 repeatUntilComplete :: (Monad m) => m World -> m ()
 repeatUntilComplete game = game >>= \state -> unless (gameover state) (repeatUntilComplete game)

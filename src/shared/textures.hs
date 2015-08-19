@@ -21,7 +21,9 @@ destroyTextures :: [SDL.Texture] -> IO ()
 destroyTextures = mapM_ SDL.destroyTexture
 
 loadTexture :: SDL.Renderer -> String -> IO SDL.Texture
-loadTexture renderer path = Image.imgLoadTexture renderer path >>= either throwSDLError return
+loadTexture renderer path = do
+    print "tex!"
+    Image.imgLoadTexture renderer path >>= either throwSDLError return
 
 loadTextureAsSurface :: SDL.Renderer -> String -> IO SDL.Texture
 loadTextureAsSurface renderer path = do

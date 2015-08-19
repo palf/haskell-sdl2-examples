@@ -60,12 +60,15 @@ drawWorld renderer assets state = withBlankScreen renderer $
           position = sprite `centredOn` fullWindow
           degrees' = fromIntegral (degrees state)
 
-updateState :: Input -> World -> World
-updateState (Just (SDL.QuitEvent _ _)) state = state { gameover = True }
-updateState (Just (SDL.KeyboardEvent evtType _ _ _ _ keysym)) state = if evtType == SDL.SDL_KEYDOWN
+updateState :: (Foldable f) => f SDL.Event -> World -> World
+updateState es world = foldl applyEvent world es
+
+applyEvent :: World -> SDL.Event -> World
+applyEvent state (SDL.QuitEvent _ _) = state { gameover = True }
+applyEvent state (SDL.KeyboardEvent evtType _ _ _ _ keysym) = if evtType == SDL.SDL_KEYDOWN
     then modifyState state keysym
     else state
-updateState _ state = state
+applyEvent state _ = state
 
 modifyState :: World -> SDL.Keysym -> World
 modifyState state keysym = case getKey keysym of

@@ -1,5 +1,6 @@
 module Shared.Input (
     Input,
+    Inputs,
     handleNoInput,
 
     KeyDirection  (..),
@@ -12,6 +13,7 @@ import qualified Graphics.UI.SDL as SDL
 import Shared.Input.Keys
 
 type Input = Maybe SDL.Event
+type Inputs = [SDL.Event]
 
 handleNoInput :: IO (Maybe SDL.Event) -> IO Bool
 handleNoInput stream = do

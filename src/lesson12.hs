@@ -54,10 +54,13 @@ drawWorld renderer assets state@(World False r g b) = do
           position = SDL.Rect { rectX = 0, rectY = 0, rectW = width, rectH = height }
 drawWorld _ _ state = return state
 
-updateState :: Input -> World -> World
-updateState (Just (SDL.KeyboardEvent evtType _ _ _ _ keysym)) state = if evtType == SDL.SDL_KEYDOWN then modifyState state keysym else state
-updateState (Just (SDL.QuitEvent _ _)) state = state { gameover = True }
-updateState _ state = state
+updateState :: (Foldable f) => f SDL.Event -> World -> World
+updateState es world = foldl applyEvent world es
+
+applyEvent :: World -> SDL.Event -> World
+applyEvent state (SDL.QuitEvent _ _) = state { gameover = True }
+applyEvent state (SDL.KeyboardEvent evtType _ _ _ _ keysym) = if evtType == SDL.SDL_KEYDOWN then modifyState state keysym else state
+applyEvent state _ = state
 
 modifyState :: World -> SDL.Keysym -> World
 modifyState state keysym = case getKey keysym of

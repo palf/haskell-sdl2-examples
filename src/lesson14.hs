@@ -62,9 +62,12 @@ drawWorld renderer assets (World False frameValue) = withBlankScreen renderer $ 
           getMask x = toRect (x * 48) 0 48 48
 drawWorld _ _ _ = return ()
 
-updateState :: Input -> World -> World
-updateState (Just (SDL.QuitEvent _ _)) state = state { gameover = True }
-updateState _ state = state { frame = frame state + 1 }
+updateState :: (Foldable f) => f SDL.Event -> World -> World
+updateState es world = foldl applyEvent world es
+
+applyEvent :: World -> SDL.Event -> World
+applyEvent state (SDL.QuitEvent _ _) = state { gameover = True }
+applyEvent state _ = state { frame = frame state + 1 }
 
 repeatUntilComplete :: (Monad m) => m World -> m ()
 repeatUntilComplete game = game >>= \state -> unless (gameover state) $ repeatUntilComplete game

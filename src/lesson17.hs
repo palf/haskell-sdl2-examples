@@ -34,7 +34,7 @@ makeEntity pos = Entity { mouseState = MouseOut, position = pos }
 main :: IO ()
 main = withSDLContext $ \renderer ->
     withAssets renderer ["./assets/mouse_states.png"] $ \assets -> do
-        let inputSource = pollEvent `into` updateState
+        let inputSource = collectEvents `into` updateState
         let pollDraw = inputSource ~>~ drawWorld renderer assets
         runStateT (repeatUntilComplete pollDraw) initialState
 
@@ -79,25 +79,29 @@ positionToPoint BottomRight = (320, 240)
 allPositions :: [Position]
 allPositions = [minBound .. ]
 
+updateState :: (Foldable f) => f SDL.Event -> World -> World
+updateState es state = foldl applyEvent state es
 
-updateState :: Input -> World -> World
-updateState (Just (SDL.QuitEvent _ _)) state = state { gameover = True }
-updateState (Just (SDL.MouseMotionEvent _ _ _ _ _ x y _ _)) state = state { quadrants = updatedEntities }
-    where updatedEntities = map (makeNewEntity (fromIntegral x) (fromIntegral y)) allPositions
-updateState (Just (SDL.MouseButtonEvent evtType _ _ _ _ _ _ _ _)) state
-    | evtType == SDL.SDL_MOUSEBUTTONDOWN = state
-    | evtType == SDL.SDL_MOUSEBUTTONUP = state
+applyEvent :: World -> SDL.Event -> World
+applyEvent state (SDL.QuitEvent _ _) = state { gameover = True }
+applyEvent state (SDL.MouseMotionEvent _ _ _ _ _ x y _ _) = state { quadrants = updatedEntities }
+    where updatedEntities = map (makeNewEntity (x, y) MouseOver) allPositions
+applyEvent state (SDL.MouseButtonEvent evtType _ _ _ _ _ _ x y)
+    | evtType == SDL.SDL_MOUSEBUTTONDOWN = state { quadrants = updatedEntities MouseDown }
+    | evtType == SDL.SDL_MOUSEBUTTONUP = state { quadrants = updatedEntities MouseUp }
     | otherwise = state
-updateState _ state = state
+    where updatedEntities ms = map (makeNewEntity (x, y) ms) allPositions
+applyEvent state _ = state
 
-makeNewEntity :: Int -> Int -> Position -> Entity
-makeNewEntity x y pos = Entity { mouseState = newState, position = pos }
-    where newState = getMouseState pos x y
+makeNewEntity :: (Integral a) => (a, a) -> EntityState -> Position -> Entity
+makeNewEntity (x', y') ms pos = Entity { mouseState = newState, position = pos }
+    where newState = getMouseState pos (x, y) ms
+          (x, y) = (fromIntegral x', fromIntegral y')
 
-getMouseState :: Position -> Int -> Int -> EntityState
-getMouseState pos x y
-    | (x, y) `within` n  = MouseOver
-    | otherwise     = MouseOut
+getMouseState :: Position -> (Int, Int) -> EntityState -> EntityState
+getMouseState pos (x, y) ms
+    | (x, y) `within` n = ms
+    | otherwise         = MouseOut
     where n = positionToPoint pos
 
 repeatUntilComplete :: (Monad m) => m World -> m ()

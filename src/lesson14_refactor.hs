@@ -87,9 +87,12 @@ withBlankScreen renderer operation = do
     SDL.renderPresent renderer
 
 
-updateState :: Input -> World -> World
-updateState (Just (SDL.QuitEvent _ _)) state = state { appState = Exiting }
-updateState _ state = state { frame = frame state + 1 }
+updateState :: (Foldable f) => f SDL.Event -> World -> World
+updateState es world = foldl applyEvent world es
+
+applyEvent :: World -> SDL.Event -> World
+applyEvent state (SDL.QuitEvent _ _) = state { appState = Exiting }
+applyEvent state _ = state { frame = frame state + 1 }
 
 
 repeatUntilComplete :: (Monad m) => m World -> m ()
