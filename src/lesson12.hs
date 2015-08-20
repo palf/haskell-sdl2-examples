@@ -32,17 +32,22 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     withAssets renderer ["./assets/colors.png"] $ runGame renderer
     SDL.destroyRenderer renderer
 
-runGame :: SDL.Renderer -> [Asset] -> IO ()
-runGame renderer assets = repeatUntilGameover updateSource drawWorld initialWorld
-    where drawWorld = draw renderer assets
-
-updateSource :: IO (UpdateWorld)
-updateSource = createUpdateFunction collectEvents
-
 data World = World { gameover :: Bool, red :: Word8, green :: Word8, blue :: Word8 } deriving (Show)
 data Colour = Red | Green | Blue
 data Intent = Increase Colour | Decrease Colour | DoNothing | Quit
 type UpdateWorld = World -> World
+
+runGame :: SDL.Renderer -> [Asset] -> IO ()
+runGame renderer assets = repeatUntilGameover updateSource drawWorld initialWorld
+    where drawWorld = draw renderer assets
+
+repeatUntilGameover :: (Monad m) => m (UpdateWorld) -> (World -> m ()) -> World -> m ()
+repeatUntilGameover updateFunc drawFunc = go
+  where go world = updateFunc <*> pure world >>= \world' ->
+          drawFunc world' >> unless (gameover world') (go world')
+
+updateSource :: IO (UpdateWorld)
+updateSource = createUpdateFunction collectEvents
 
 createUpdateFunction :: (Monad m, Functor f, Foldable f) => m (f SDL.Event) -> m (UpdateWorld)
 createUpdateFunction input = do
@@ -85,11 +90,6 @@ decrease Blue world = world { blue = blue world - 16 }
 
 quit :: UpdateWorld
 quit world = world { gameover = True }
-
-repeatUntilGameover :: (Monad m) => m (UpdateWorld) -> (World -> m ()) -> World -> m ()
-repeatUntilGameover updateFunc drawFunc = go
-  where go world = updateFunc <*> pure world >>= \world' ->
-          drawFunc world' >> unless (gameover world') (go world')
 
 draw :: SDL.Renderer -> [Asset] -> World -> IO ()
 draw renderer assets world = do
