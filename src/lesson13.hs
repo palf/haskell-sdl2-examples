@@ -32,8 +32,8 @@ fullWindow = SDL.Rect {
     rectW = fst size,
     rectH = snd size }
 
-initialState :: World
-initialState = World { gameover = False, alpha = 0 }
+initialWorld :: World
+initialWorld = World { gameover = False, alpha = 0 }
 
 
 main :: IO ()
@@ -43,7 +43,7 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     withAssets renderer ["./assets/fadein.png", "./assets/fadeout.png"] $ \assets -> do
         let inputSource = pollEvent `into` updateState
         let pollDraw = inputSource ~>~ drawWorld renderer assets
-        runStateT (repeatUntilComplete pollDraw) initialState
+        runStateT (repeatUntilComplete pollDraw) initialWorld
     SDL.destroyRenderer renderer
 
 

@@ -32,8 +32,8 @@ fullWindow = SDL.Rect {
     rectW = fst size,
     rectH = snd size }
 
-initialState :: World
-initialState = World { gameover = False, frame = 0 }
+initialWorld :: World
+initialWorld = World { gameover = False, frame = 0 }
 
 main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
@@ -42,7 +42,7 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     walkingTexture <- loadTexture renderer "./assets/walk.png"
     let inputSource = pollEvent `into` updateState
     let pollDraw = inputSource ~>~ drawWorld renderer [walkingTexture]
-    _ <- runStateT (repeatUntilComplete pollDraw) initialState
+    _ <- runStateT (repeatUntilComplete pollDraw) initialWorld
     destroyTextures [walkingTexture]
     SDL.destroyRenderer renderer
 

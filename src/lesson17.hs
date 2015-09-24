@@ -24,8 +24,8 @@ size = (640, 480)
 inWindow :: (SDL.Window -> IO ()) -> IO ()
 inWindow = withSDL . withWindow title size
 
-initialState :: World
-initialState = World { gameover = False, quadrants = map makeEntity allPositions }
+initialWorld :: World
+initialWorld = World { gameover = False, quadrants = map makeEntity allPositions }
 
 makeEntity :: Position -> Entity
 makeEntity pos = Entity { mouseState = MouseOut, position = pos }
@@ -35,7 +35,7 @@ main = withSDLContext $ \renderer ->
     withAssets renderer ["./assets/mouse_states.png"] $ \assets -> do
         let inputSource = collectEvents `into` updateState
         let pollDraw = inputSource ~>~ drawWorld renderer assets
-        runStateT (repeatUntilComplete pollDraw) initialState
+        runStateT (repeatUntilComplete pollDraw) initialWorld
 
 withSDLContext :: (SDL.Renderer -> IO ()) -> IO ()
 withSDLContext f = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do

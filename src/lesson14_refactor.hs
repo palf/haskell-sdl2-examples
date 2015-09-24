@@ -37,8 +37,8 @@ screenWidth = 640
 screenHeight :: CInt
 screenHeight = 480
 
-initialState :: World
-initialState = World { appState = Running, frame = 0 }
+initialWorld :: World
+initialWorld = World { appState = Running, frame = 0 }
 
 
 data AppState = Running | Exiting deriving Eq
@@ -52,7 +52,7 @@ main = withSDLContext $ \renderer ->
     withAssets renderer ["./assets/walk.png"] $ \assets -> do
         let inputSource = pollEvent `into` updateState
         let pollDraw = inputSource ~>~ drawWorld renderer assets
-        runStateT (repeatUntilComplete pollDraw) initialState
+        runStateT (repeatUntilComplete pollDraw) initialWorld
 
 
 fullWindow :: SDL.Rect

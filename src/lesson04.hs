@@ -42,15 +42,22 @@ selectSurface surfaces KeyRight = surfaces !! 4
 selectSurface surfaces _ = head surfaces
 
 handleKeyInput :: IO (Maybe SDL.Event) -> (KeyPress -> IO a) -> IO Bool
-handleKeyInput stream keyHandler = do
-    maybeEvent <- stream
-    case maybeEvent of
-        Nothing -> return False
-        Just (SDL.QuitEvent _ _) -> return True
-        Just (SDL.KeyboardEvent _ _ _ _ _ keysym) -> do
-            _ <- keyHandler $ getKey keysym
-            return False
-        _ -> return False
+handleKeyInput input keyHandler = do
+    events <- input
+    let intents = fmap eventToIntent events
+    applyIntents intents keyHandler
+
+applyIntents :: Maybe Intent -> (KeyPress -> IO a) -> IO Bool
+applyIntents (Just Quit) _ = return True
+applyIntents (Just (SelectSurface key)) keyHandler = keyHandler key >> return False
+applyIntents _ _ = return False
+
+data Intent = SelectSurface KeyPress | DoNothing | Quit
+
+eventToIntent :: SDL.Event -> Intent
+eventToIntent (SDL.QuitEvent _ _) = Quit
+eventToIntent (SDL.KeyboardEvent _ _ _ _ _ keysym) = SelectSurface (getKey keysym)
+eventToIntent _ = DoNothing
 
 main :: IO ()
 main = drawInWindow $ \draw -> do

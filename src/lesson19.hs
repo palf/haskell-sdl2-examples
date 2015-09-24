@@ -43,10 +43,10 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     gameController <- SDL.gameControllerOpen 0
     if gameController == nullPtr then fail "no controller found" else print "yay!"
     disableEventPolling [SDL.SDL_CONTROLLERAXISMOTION, SDL.SDL_JOYAXISMOTION]
-    let initialState = World { gameover = False, getController = gameController, target = (320, 240) }
+    let initialWorld = World { gameover = False, getController = gameController, target = (320, 240) }
     let inputSource = pollEvent `into` updateState
     let pollDraw = inputSource ~>~ drawWorld renderer [texture]
-    _ <- runStateT (repeatUntilComplete pollDraw) initialState
+    _ <- runStateT (repeatUntilComplete pollDraw) initialWorld
     SDL.gameControllerClose gameController
     SDL.destroyTexture texture
     SDL.destroyRenderer renderer

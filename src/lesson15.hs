@@ -34,8 +34,8 @@ fullWindow = SDL.Rect {
     rectW = fst size,
     rectH = snd size }
 
-initialState :: World
-initialState = World { gameover = False, degrees = 0, flipType = SDL.SDL_FLIP_NONE }
+initialWorld :: World
+initialWorld = World { gameover = False, degrees = 0, flipType = SDL.SDL_FLIP_NONE }
 
 main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
@@ -44,7 +44,7 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     withAssets renderer ["./assets/arrow.png"] $ \assets -> do
         let inputSource = pollEvent `into` updateState
         let pollDraw = inputSource ~>~ drawWorld renderer assets
-        runStateT (repeatUntilComplete pollDraw) initialState
+        runStateT (repeatUntilComplete pollDraw) initialWorld
     SDL.destroyRenderer renderer
 
 data World = World { gameover :: Bool, degrees :: Int, flipType :: SDL.RendererFlip }
