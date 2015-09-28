@@ -22,8 +22,11 @@ size = (640, 480)
 inWindow :: (SDL.Window -> IO ()) -> IO ()
 inWindow = withSDL . withWindow title size
 
+initialApplication :: Application
+initialApplication = Application { exiting = False, gameworld = initialWorld }
+
 initialWorld :: World
-initialWorld = World { gameover = False, red = 128, green = 128, blue = 128 }
+initialWorld = World { red = 128, green = 128, blue = 128 }
 
 main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
@@ -32,28 +35,29 @@ main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     withAssets renderer ["./assets/colors.png"] $ runGame renderer
     SDL.destroyRenderer renderer
 
-data World = World { gameover :: Bool, red :: Word8, green :: Word8, blue :: Word8 } deriving (Show)
-data Colour = Red | Green | Blue
-data Intent = Increase Colour | Decrease Colour | DoNothing | Quit
-type UpdateWorld = World -> World
+data Application = Application { exiting :: Bool, gameworld :: World } deriving (Show)
+data World = World { red :: Word8, green :: Word8, blue :: Word8 } deriving (Show)
+data Colour = Red | Green | Blue deriving (Show, Eq)
+data Intent = Increase Colour | Decrease Colour | DoNothing | Quit deriving (Show, Eq)
+type UpdateApplication = Application -> Application
 
 runGame :: SDL.Renderer -> [Asset] -> IO ()
-runGame renderer assets = repeatUntilGameover updateSource drawWorld initialWorld
-    where drawWorld = draw renderer assets
+runGame renderer assets = repeatUntilGameover updateSource drawApplication initialApplication
+    where drawApplication = draw renderer assets
 
-repeatUntilGameover :: (Monad m) => m UpdateWorld -> (World -> m ()) -> World -> m ()
+repeatUntilGameover :: (Monad m) => m UpdateApplication -> (Application -> m ()) -> Application -> m ()
 repeatUntilGameover updateFunc drawFunc = go
-  where go world = updateFunc <*> pure world >>= \world' ->
-          drawFunc world' >> unless (gameover world') (go world')
+  where go application = updateFunc <*> pure application >>= \application' ->
+          drawFunc application' >> unless (exiting application') (go application')
 
-updateSource :: IO UpdateWorld
+updateSource :: IO UpdateApplication
 updateSource = createUpdateFunction collectEvents
 
-createUpdateFunction :: (Monad m, Functor f, Foldable f) => m (f SDL.Event) -> m UpdateWorld
+createUpdateFunction :: (Monad m, Functor f, Foldable f) => m (f SDL.Event) -> m UpdateApplication
 createUpdateFunction input = do
     events <- input
     let intents = fmap eventToIntent events
-    return $ \world -> foldl (flip applyIntent) world intents
+    return $ \application -> foldl (flip applyIntent) application intents
 
 eventToIntent :: SDL.Event -> Intent
 eventToIntent (SDL.QuitEvent _ _) = Quit
@@ -72,39 +76,66 @@ inputToIntent key = case key of
     D -> Decrease Blue
     _ -> DoNothing
 
-applyIntent :: Intent -> UpdateWorld
+applyIntent :: Intent -> UpdateApplication
 applyIntent (Increase color) = increase color
 applyIntent (Decrease color) = decrease color
 applyIntent DoNothing = id
 applyIntent Quit = quit
 
-increase :: Colour -> UpdateWorld
-increase Red world = world { red = red world + 16 }
-increase Green world = world { green = green world + 16 }
-increase Blue world = world { blue = blue world + 16 }
+type Identity a = a -> a
+data Lens a b = Lens { getL :: a -> b, setL :: b -> a -> a }
+type ColourLens = Lens World Word8
 
-decrease :: Colour -> UpdateWorld
-decrease Red world = world { red = red world - 16 }
-decrease Green world = world { green = green world - 16 }
-decrease Blue world = world { blue = blue world - 16 }
+modL :: Lens a b -> a -> (b -> b) -> a
+modL lens record func = setL lens newValue record
+  where value = getL lens record
+        newValue = func value
 
-quit :: UpdateWorld
-quit world = world { gameover = True }
+redLens :: ColourLens
+redLens = Lens red setRed
+  where setRed x world = world { red = x }
 
-draw :: SDL.Renderer -> [Asset] -> World -> IO ()
-draw renderer assets world = do
-    let instructions = writeRenderInstructions assets world
+greenLens :: ColourLens
+greenLens = Lens green setGreen
+    where setGreen x world = world { green = x }
+
+blueLens :: ColourLens
+blueLens = Lens blue setBlue
+    where setBlue x world = world { blue = x }
+
+increase :: Colour -> UpdateApplication
+increase Red = modifyColour redLens (+ 16)
+increase Green = modifyColour greenLens (+ 16)
+increase Blue = modifyColour blueLens (+ 16)
+
+decrease :: Colour -> UpdateApplication
+decrease Red = modifyColour redLens (flip (-) 16)
+decrease Green = modifyColour greenLens (flip (-) 16)
+decrease Blue = modifyColour blueLens (flip (-) 16)
+
+quit :: UpdateApplication
+quit application = application { exiting = True }
+
+modifyColour :: ColourLens -> Identity Word8 -> UpdateApplication
+modifyColour lens func application = application { gameworld = world' }
+  where world' = modL lens world func
+        world = gameworld application
+
+draw :: SDL.Renderer -> [Asset] -> Application -> IO ()
+draw renderer assets application = do
+    let instructions = writeRenderInstructions assets application
     withBlankScreen renderer $ executeRender renderer instructions
 
 data RenderInstruction =
     SetTextureColor SDL.Texture Word8 Word8 Word8 |
     RenderCopy SDL.Texture SDL.Rect
 
-writeRenderInstructions :: [Asset] -> World -> [RenderInstruction]
-writeRenderInstructions assets (World _ r g b) = [
+writeRenderInstructions :: [Asset] -> Application -> [RenderInstruction]
+writeRenderInstructions assets (Application _ world) = [
     SetTextureColor texture r g b ,
     RenderCopy texture position ]
-    where (texture, width, height) = head assets
+    where World r b g = world
+          (texture, width, height) = head assets
           position = SDL.Rect { rectX = 0, rectY = 0, rectW = width, rectH = height }
 
 executeRender :: (Foldable f) => SDL.Renderer -> f RenderInstruction -> IO ()
