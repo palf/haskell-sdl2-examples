@@ -41,15 +41,15 @@ runGame :: SDL.Renderer -> [Asset] -> IO ()
 runGame renderer assets = repeatUntilGameover updateSource drawWorld initialWorld
     where drawWorld = draw renderer assets
 
-repeatUntilGameover :: (Monad m) => m (UpdateWorld) -> (World -> m ()) -> World -> m ()
+repeatUntilGameover :: (Monad m) => m UpdateWorld -> (World -> m ()) -> World -> m ()
 repeatUntilGameover updateFunc drawFunc = go
   where go world = updateFunc <*> pure world >>= \world' ->
           drawFunc world' >> unless (gameover world') (go world')
 
-updateSource :: IO (UpdateWorld)
+updateSource :: IO UpdateWorld
 updateSource = createUpdateFunction collectEvents
 
-createUpdateFunction :: (Monad m, Functor f, Foldable f) => m (f SDL.Event) -> m (UpdateWorld)
+createUpdateFunction :: (Monad m, Functor f, Foldable f) => m (f SDL.Event) -> m UpdateWorld
 createUpdateFunction input = do
     events <- input
     let intents = fmap eventToIntent events
