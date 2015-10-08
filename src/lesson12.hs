@@ -32,7 +32,7 @@ main :: IO ()
 main = inWindow $ \window -> Image.withImgInit [Image.InitPNG] $ do
     _ <- setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
     renderer <- createRenderer window (-1) [SDL.SDL_RENDERER_ACCELERATED] >>= either throwSDLError return
-    withAssets renderer ["./assets/colors.png"] $ runGame renderer
+    withAssets renderer ["./assets/colors.png"] $ runApplication renderer
     SDL.destroyRenderer renderer
 
 data Application = Application { exiting :: Bool, gameworld :: World } deriving (Show)
@@ -41,23 +41,29 @@ data Colour = Red | Green | Blue deriving (Show, Eq)
 data Intent = Increase Colour | Decrease Colour | DoNothing | Quit deriving (Show, Eq)
 type UpdateApplication = Application -> Application
 
-runGame :: SDL.Renderer -> [Asset] -> IO ()
-runGame renderer assets = repeatUntilGameover updateSource drawApplication initialApplication
-    where drawApplication = draw renderer assets
+runApplication :: SDL.Renderer -> [Asset] -> IO ()
+runApplication renderer assets = repeatUntilGameover applyAndDraw initialApplication
+    where applyIntents = updateSource collectEvents
+          drawApplication = draw renderer assets
+          applyAndDraw = runstuff (applyIntents, drawApplication)
 
-repeatUntilGameover :: (Monad m) => m UpdateApplication -> (Application -> m ()) -> Application -> m ()
-repeatUntilGameover updateFunc drawFunc = go
-  where go application = updateFunc <*> pure application >>= \application' ->
-          drawFunc application' >> unless (exiting application') (go application')
+repeatUntilGameover :: (Monad m) => (Application -> m Application) -> Application -> m ()
+repeatUntilGameover t = go
+  where go application = t application >>= efunc
+        efunc application = unless (exiting application) (go application)
 
-updateSource :: IO UpdateApplication
-updateSource = createUpdateFunction collectEvents
+runstuff :: (Monad m) => (m UpdateApplication, (Application -> m ())) -> Application -> m Application
+runstuff (updateFunc, drawFunc) application = updateFunc <*> pure application >>= \application' ->
+          drawFunc application' >> return application'
 
-createUpdateFunction :: (Monad m, Functor f, Foldable f) => m (f SDL.Event) -> m UpdateApplication
-createUpdateFunction input = do
-    events <- input
-    let intents = fmap eventToIntent events
-    return $ \application -> foldl (flip applyIntent) application intents
+collectIntents :: (Monad m, Functor f) => m (f Event) -> m (f Intent)
+collectIntents = liftM (fmap eventToIntent)
+
+updateSource :: (Monad m, Functor f, Foldable f) => m (f Event) -> m UpdateApplication
+updateSource events = flip stepApplication <$> collectIntents events
+
+stepApplication :: (Foldable f) => Application -> f Intent -> Application
+stepApplication = foldl (flip applyIntent)
 
 eventToIntent :: SDL.Event -> Intent
 eventToIntent (SDL.QuitEvent _ _) = Quit
