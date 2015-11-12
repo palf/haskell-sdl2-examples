@@ -52,7 +52,7 @@ repeatUntilGameover t = go
   where go application = t application >>= efunc
         efunc application = unless (exiting application) (go application)
 
-runstuff :: (Monad m) => (m UpdateApplication, (Application -> m ())) -> Application -> m Application
+runstuff :: (Monad m) => (m UpdateApplication, Application -> m ()) -> Application -> m Application
 runstuff (updateFunc, drawFunc) application = updateFunc <*> pure application >>= \application' ->
           drawFunc application' >> return application'
 
