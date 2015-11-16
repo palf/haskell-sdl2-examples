@@ -1,0 +1,53 @@
+sudo: required
+dist: trusty
+language: c
+
+matrix:
+  include:
+    - env: CABALVER=1.22 GHCVER=7.10.1
+      os: linux
+      addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.1], sources: [hvr-ghc]}}
+    - env: CABALVER=1.22 GHCVER=7.10.2
+      os: linux
+      addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.2], sources: [hvr-ghc]}}
+
+    - os: osx
+    - env: CABALVER=head GHCVER=head
+      os: linux
+      addons: {apt: {packages: [cabal-install-head,ghc-head], sources: [hvr-ghc]}}
+
+  allow_failures:
+    - os: osx
+    - env: CABALVER=head GHCVER=head
+
+
+before_install:
+  # GHC & Cabal
+  - echo $TRAVIS_OS_NAME
+  - if [ $TRAVIS_OS_NAME = "osx" ]; then sh ./travis-ci/osx.sh; fi
+  - if [ $TRAVIS_OS_NAME = "linux" ]; then sh ./travis-ci/linux.sh; fi
+  - if [ $TRAVIS_OS_NAME = "linux" ]; then export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH; fi
+  - cabal --version
+  - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+  - travis_retry cabal update
+
+  # SDL2
+  - wget https://www.libsdl.org/release/SDL2-2.0.3.tar.gz
+  - wget https://www.libsdl.org/projects/SDL_image/release/SDL2_image-2.0.0.tar.gz
+  - tar zxvf SDL2-2.0.3.tar.gz
+  - cd SDL2-2.0.3
+  - ./configure && make && sudo make install
+  - cd ..
+  - tar zxvf SDL2_image-2.0.0.tar.gz
+  - cd SDL2_image-2.0.0
+  - ./configure && make && sudo make install
+  - cd ..
+
+
+install:
+  - if [ $CABALVER = head ]; then cabal_option="--allow-newer"; fi
+  - cabal install --only-dependencies $cabal_option
+
+script:
+  - cabal configure -v2
+  - cabal build
