@@ -2,6 +2,7 @@ resolver: lts-9.6
 packages:
 - ./examples/lesson01
 - ./examples/lesson02
+- ./examples/lesson03
 
 extra-deps: []
 
