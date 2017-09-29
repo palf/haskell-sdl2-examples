@@ -4,6 +4,7 @@ packages:
   - ./examples/lesson01
   - ./examples/lesson02
   - ./examples/lesson03
+  - ./examples/lesson04
 
 extra-deps: []
 
