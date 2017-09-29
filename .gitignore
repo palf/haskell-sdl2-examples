@@ -15,3 +15,4 @@ cabal.config
 *.aux
 *.ps
 .stack-work
+vendor
