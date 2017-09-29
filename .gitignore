@@ -14,3 +14,4 @@ cabal.config
 *.prof
 *.aux
 *.ps
+.stack-work
