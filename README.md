@@ -6,32 +6,27 @@ Check out the inspiration [here](http://lazyfoo.net/tutorials/SDL/index.php)
 
 ## Setup
 
-The following paths can be renamed to whatever you like; I don't get the packages from Hackage as the SDL2 Image bindings provided below are simpler
+You'll need a working SDL2 installation
 
-These instructions will only work if you have SDL2 and SDL2Image on your system; as this is platform-specific I'm not going to cover it - Google is your friend!
+We're using [Stack](https://docs.haskellstack.org)
 
-The library locations and folder names are just suggestions, put them wherever suits you.
-
-    git clone https://github.com/palf/haskellSDL2Examples.git your_folder_name
-    git clone https://github.com/polarina/sdl2.git hlibs/sdl2
-    git clone https://github.com/ods94065/sdl2-image.git hlibs/sdl2-image
-
-    cd your_folder_name
-    cabal sandbox init --sandbox=sandbox
-    cabal sandbox add-source ../hlibs/sdl2
-    cabal sandbox add-source ../hlibs/sdl2-image
-    cabal install --only-dependencies
+```sh
+stack setup
+stack build --pedantic
+```
 
 ## Running Examples
 
-All examples can be executed through cabal
+List available examples:
 
-    cabal run lessonxx
-    (where xx is the lesson number as two digits)
+```sh
+stack ide targets
+```
 
-To run the first lesson,
-
-    cabal run lesson01
+Run an example:
+```sh
+stack exec lesson01
+```
 
 ## Lesson Output
 
