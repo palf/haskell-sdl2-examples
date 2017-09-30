@@ -8,6 +8,7 @@ packages:
   - ./examples/lesson05
   - ./examples/lesson06
   - ./examples/lesson07
+  - ./examples/lesson08
 
 extra-deps: []
 
