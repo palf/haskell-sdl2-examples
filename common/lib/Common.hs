@@ -1,6 +1,7 @@
 module Common where
 
 import qualified SDL
+import qualified SDL.Image
 
 import Control.Monad          (void)
 import Control.Monad.IO.Class (MonadIO)
@@ -14,6 +15,13 @@ withSDL op = do
   SDL.initialize []
   void op
   SDL.quit
+
+
+withSDLImage :: (MonadIO m) => m a -> m ()
+withSDLImage op = do
+  SDL.Image.initialize []
+  void op
+  SDL.Image.quit
 
 
 withWindow :: (MonadIO m) => Text -> (Int, Int) -> (SDL.Window -> m a) -> m ()
@@ -55,3 +63,10 @@ isQuitEvent _ = False
 
 setHintQuality :: (MonadIO m) => m ()
 setHintQuality = SDL.HintRenderScaleQuality $= SDL.ScaleNearest
+
+
+mkRect :: a -> a -> a -> a-> SDL.Rectangle a
+mkRect x y w h = SDL.Rectangle o z
+  where
+    o = SDL.P (SDL.V2 x y)
+    z = SDL.V2 w h

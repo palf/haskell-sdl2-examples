@@ -22,6 +22,8 @@ main = C.withSDL $ do
         isContinue <$> SDL.pollEvent
         >>= conditionallyRun (draw r tex)
 
+      SDL.destroyTexture tex
+
 
 draw :: (MonadIO m) => SDL.Renderer -> SDL.Texture -> m ()
 draw r t = do

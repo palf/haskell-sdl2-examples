@@ -56,8 +56,8 @@ mkRect x y w h = SDL.Rectangle o s
 
 clearScreen :: (MonadIO m) => SDL.Renderer -> m ()
 clearScreen r = do
-    setColor r White
-    SDL.clear r
+  setColor r White
+  SDL.clear r
 
 
 fillRectangle :: (MonadIO m) => SDL.Renderer -> SDL.Rectangle CInt -> m ()
