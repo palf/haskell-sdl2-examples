@@ -3,20 +3,21 @@
 module Main (main) where
 
 import qualified SDL
+import qualified SDL.Image
 import qualified Common as C
 
 import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.Extra    (whileM)
+import Control.Monad.Extra (whileM)
 
 
 main :: IO ()
-main = C.withSDL $ C.withWindow "Lesson 05" (640, 480) $
+main = C.withSDL $ C.withWindow "Lesson 06" (640, 480) $
   \w -> do
 
     screen <- SDL.getWindowSurface w
     pixelFormat <- SDL.surfaceFormat screen
 
-    image <- SDL.loadBMP "./assets/stretch.bmp"
+    image <- SDL.Image.load "./assets/loaded.png"
     surface <- SDL.convertSurface image pixelFormat
 
     whileM $

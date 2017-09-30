@@ -25,11 +25,11 @@ main = C.withSDL $ C.withWindow "Lesson 03" (640, 480) $
     SDL.freeSurface screen
 
 
-conditionallyRun :: (Monad m) => m a -> Bool -> m Bool
-conditionallyRun f True = const True <$> f
-conditionallyRun _ False = pure False
-
-
 isContinue :: Maybe SDL.Event -> Bool
 isContinue Nothing = True
 isContinue (Just e) = not $ C.isQuitEvent e
+
+
+conditionallyRun :: (Monad m) => m a -> Bool -> m Bool
+conditionallyRun f True = const True <$> f
+conditionallyRun _ False = pure False
