@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveTraversable #-}
 
 module Main (main) where
 
@@ -6,30 +8,39 @@ import qualified SDL
 import qualified Common as C
 
 import Control.Monad.Extra    (whileM)
-
+import Prelude hiding (Left, Right)
 
 data Intent
-  = SelectSurface KeyPress
+  = SelectSurface Direction
   | Idle
   | Quit
 
 
-data KeyPress
-  = KeyUp
-  | KeyDown
-  | KeyLeft
-  | KeyRight
-  | Unknown
+data Direction
+  = Help
+  | Up
+  | Down
+  | Left
+  | Right
 
 
-surfacePaths :: [FilePath]
-surfacePaths =
-  [ "./assets/press.bmp"
-  , "./assets/up.bmp"
-  , "./assets/down.bmp"
-  , "./assets/left.bmp"
-  , "./assets/right.bmp"
-  ]
+data SurfaceMap a = SurfaceMap
+  { help  :: a
+  , up    :: a
+  , down  :: a
+  , left  :: a
+  , right :: a
+  } deriving (Foldable, Traversable, Functor)
+
+
+surfacePaths :: SurfaceMap FilePath
+surfacePaths = SurfaceMap
+  { help  = "./assets/press.bmp"
+  , up    = "./assets/up.bmp"
+  , down  = "./assets/down.bmp"
+  , left  = "./assets/left.bmp"
+  , right = "./assets/right.bmp"
+  }
 
 
 main :: IO ()
@@ -40,7 +51,7 @@ main = C.withSDL $ C.withWindow "Lesson 04" (640, 480) $
     surfaces <- mapM SDL.loadBMP surfacePaths
 
     let doRender = C.renderSurfaceToWindow w screen
-    doRender (head surfaces)
+    doRender (help surfaces)
 
     whileM $
       mkIntent <$> SDL.pollEvent
@@ -51,8 +62,7 @@ main = C.withSDL $ C.withWindow "Lesson 04" (640, 480) $
 
 
 mkIntent :: Maybe SDL.Event -> Intent
-mkIntent Nothing = Idle
-mkIntent (Just e) = eventToIntent (extractPayload e)
+mkIntent = maybe Idle (eventToIntent . extractPayload)
 
 
 extractPayload :: SDL.Event -> SDL.EventPayload
@@ -61,21 +71,24 @@ extractPayload (SDL.Event _t p) = p
 
 eventToIntent :: SDL.EventPayload -> Intent
 eventToIntent SDL.QuitEvent         = Quit
-eventToIntent (SDL.KeyboardEvent k) = SelectSurface (getKey k)
+eventToIntent (SDL.KeyboardEvent k) = getKey k
 eventToIntent _                     = Idle
 
 
-getKey :: SDL.KeyboardEventData -> KeyPress
-getKey (SDL.KeyboardEventData _ _ _ keysym) =
+getKey :: SDL.KeyboardEventData -> Intent
+getKey (SDL.KeyboardEventData _ SDL.Released _ _) = Idle
+getKey (SDL.KeyboardEventData _ SDL.Pressed True _) = Idle
+getKey (SDL.KeyboardEventData _ SDL.Pressed False keysym) =
   case SDL.keysymKeycode keysym of
-    SDL.KeycodeRight -> KeyRight
-    SDL.KeycodeLeft  -> KeyLeft
-    SDL.KeycodeDown  -> KeyDown
-    SDL.KeycodeUp    -> KeyUp
-    _                -> Unknown
+    SDL.KeycodeEscape -> Quit
+    SDL.KeycodeUp     -> SelectSurface Up
+    SDL.KeycodeDown   -> SelectSurface Down
+    SDL.KeycodeLeft   -> SelectSurface Left
+    SDL.KeycodeRight  -> SelectSurface Right
+    _                 -> SelectSurface Help
 
 
-runIntent :: (Monad m) => [a] -> (a -> m ()) -> Intent -> m Bool
+runIntent :: (Monad m) => SurfaceMap a -> (a -> m ()) -> Intent -> m Bool
 runIntent _ _ Quit
   = pure False
 
@@ -83,16 +96,12 @@ runIntent _ _ Idle
   = pure True
 
 runIntent cs f (SelectSurface key)
-  = True <$ f (selectSurface cs key)
+  = True <$ f (selectSurface key cs)
 
 
-selectSurface :: [a] -> KeyPress -> a
-selectSurface xs k = xs !! selectSurfaceIndex k
-
-
-selectSurfaceIndex :: KeyPress -> Int
-selectSurfaceIndex KeyUp    = 1
-selectSurfaceIndex KeyDown  = 2
-selectSurfaceIndex KeyLeft  = 3
-selectSurfaceIndex KeyRight = 4
-selectSurfaceIndex _        = 0
+selectSurface :: Direction -> SurfaceMap a -> a
+selectSurface Help  = help
+selectSurface Up    = up
+selectSurface Down  = down
+selectSurface Left  = left
+selectSurface Right = right
