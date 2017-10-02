@@ -1,5 +1,5 @@
 module Lesson12.Transitions
-  ( updateWorld
+  ( stepWorld
   , increase
   , decrease
   , toggle
@@ -9,8 +9,8 @@ module Lesson12.Transitions
 import Lesson12.Types
 
 
-updateWorld :: World -> World
-updateWorld w = w { colors = newColors }
+stepWorld :: World -> World
+stepWorld w = w { colors = newColors }
   where
     newColors = (colors w) { redV = newRedV, greenV = newGreenV, blueV = newBlueV }
     newRedV   = updateColorValue (redT (toggles w)) (redV (colors w))

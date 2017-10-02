@@ -42,7 +42,7 @@ main = C.withSDL $ C.withSDLImage $ do
       _ <- iterateUntilM
         exiting
         (\x ->
-          (T.updateWorld . foldl' runIntent x . mkIntent) <$> SDL.pollEvents
+          updateWorld x <$> SDL.pollEvents
           >>= \x' -> x' <$ doRender x'
         )
         initialWorld
@@ -51,18 +51,21 @@ main = C.withSDL $ C.withSDLImage $ do
 
 
 
+updateWorld :: World -> [SDL.Event] -> World
+updateWorld w
+  = T.stepWorld
+  . foldl' (flip runIntent) w
+  . mkIntent
+
+
 mkIntent :: [SDL.Event] -> [Intent]
-mkIntent = fmap (eventToIntent . extractPayload)
+mkIntent = fmap (payloadToIntent . SDL.eventPayload)
 
 
-extractPayload :: SDL.Event -> SDL.EventPayload
-extractPayload (SDL.Event _t p) = p
-
-
-eventToIntent :: SDL.EventPayload -> Intent
-eventToIntent SDL.QuitEvent         = Quit
-eventToIntent (SDL.KeyboardEvent k) = getKey k
-eventToIntent _                     = Idle
+payloadToIntent :: SDL.EventPayload -> Intent
+payloadToIntent SDL.QuitEvent         = Quit
+payloadToIntent (SDL.KeyboardEvent k) = getKey k
+payloadToIntent _                     = Idle
 
 
 getKey :: SDL.KeyboardEventData -> Intent
@@ -83,9 +86,9 @@ getKey (SDL.KeyboardEventData _ SDL.Pressed False keysym) =
     _                 -> Idle
 
 
-runIntent :: World -> Intent -> World
-runIntent w (Increase color) = T.increase color w
-runIntent w (Decrease color) = T.decrease color w
-runIntent w (Toggle color)   = T.toggle color w
-runIntent w Idle             = w
-runIntent w Quit             = T.exit w
+runIntent :: Intent -> World -> World
+runIntent (Increase color) = T.increase color
+runIntent (Decrease color) = T.decrease color
+runIntent (Toggle color)   = T.toggle color
+runIntent Idle             = id
+runIntent Quit             = T.exit

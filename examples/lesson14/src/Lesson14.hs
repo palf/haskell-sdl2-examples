@@ -14,7 +14,7 @@ import Control.Monad.IO.Class (MonadIO)
 import Data.Foldable   (foldl')
 
 
-data Application = Application
+data World = World
   { exiting :: Bool
   , frame   :: Int
   }
@@ -23,8 +23,8 @@ data Application = Application
 data Intent = Idle | Quit
 
 
-initialApp :: Application
-initialApp = Application
+initialApp :: World
+initialApp = World
   { exiting = False
   , frame   = 0
   }
@@ -41,7 +41,7 @@ main = C.withSDL $ C.withSDLImage $ do
       SDL.destroyTexture t
 
 
-runApp :: (Monad m) => (Application -> m Application) -> Application -> m ()
+runApp :: (Monad m) => (World -> m World) -> World -> m ()
 runApp f = repeatUntil f exiting
 
 
@@ -50,13 +50,13 @@ repeatUntil f p = go
   where go a = f a >>= \b -> unless (p b) (go b)
 
 
-appLoop :: (MonadIO m) => (Application -> m ())-> Application -> m Application
+appLoop :: (MonadIO m) => (World -> m ())-> World -> m World
 appLoop r a
   = updateApp a <$> pollIntents
   >>= \a' -> a' <$ r a'
 
 
-updateApp :: Application -> [Intent] -> Application
+updateApp :: World -> [Intent] -> World
 updateApp a = stepFrame . foldl' applyIntent a
 
 
@@ -72,16 +72,16 @@ eventToIntent (SDL.Event _t SDL.QuitEvent) = Quit
 eventToIntent _                            = Idle
 
 
-applyIntent :: Application -> Intent -> Application
+applyIntent :: World -> Intent -> World
 applyIntent a Quit = a { exiting = True }
 applyIntent a Idle = a
 
 
-stepFrame :: Application -> Application
+stepFrame :: World -> World
 stepFrame a = a { frame = frame a + 1 }
 
 
-renderApp :: (MonadIO m) => SDL.Renderer -> SDL.Texture -> Application -> m ()
+renderApp :: (MonadIO m) => SDL.Renderer -> SDL.Texture -> World -> m ()
 renderApp r t a = do
   SDL.clear r
   SDL.copy r t (Just mask) (Just pos)

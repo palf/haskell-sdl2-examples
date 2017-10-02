@@ -60,7 +60,7 @@ main = C.withSDL $ C.withSDLImage $ do
       _ <- iterateUntilM
         exiting
         (\x ->
-          (updateWorld . foldl' runIntent x . mkIntent) <$> SDL.pollEvents
+          (updateWorld . foldl' (flip runIntent) x . mkIntent) <$> SDL.pollEvents
           >>= \x' -> x' <$ doRender x'
         )
         initialWorld
@@ -69,17 +69,17 @@ main = C.withSDL $ C.withSDLImage $ do
 
 
 mkIntent :: [SDL.Event] -> [Intent]
-mkIntent = fmap (eventToIntent . extractPayload)
+mkIntent = fmap (payloadToIntent . extractPayload)
 
 
 extractPayload :: SDL.Event -> SDL.EventPayload
 extractPayload (SDL.Event _t p) = p
 
 
-eventToIntent :: SDL.EventPayload -> Intent
-eventToIntent SDL.QuitEvent         = Quit
-eventToIntent (SDL.KeyboardEvent k) = keyEventToIntent k
-eventToIntent _                     = Idle
+payloadToIntent :: SDL.EventPayload -> Intent
+payloadToIntent SDL.QuitEvent         = Quit
+payloadToIntent (SDL.KeyboardEvent k) = keyEventToIntent k
+payloadToIntent _                     = Idle
 
 
 keyEventToIntent :: SDL.KeyboardEventData -> Intent
@@ -92,11 +92,11 @@ keyEventToIntent (SDL.KeyboardEventData _ SDL.Pressed _ keysym) =
     _                 -> Idle
 
 
-runIntent :: World -> Intent -> World
-runIntent w Increase  = increase w
-runIntent w Decrease  = decrease w
-runIntent w Idle      = id w
-runIntent w Quit      = quit w
+runIntent :: Intent -> World -> World
+runIntent Increase  = increase
+runIntent Decrease  = decrease
+runIntent Idle      = id
+runIntent Quit      = quit
 
 
 increase :: World -> World

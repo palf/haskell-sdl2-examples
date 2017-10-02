@@ -62,17 +62,17 @@ main = C.withSDL $ C.withWindow "Lesson 04" (640, 480) $
 
 
 mkIntent :: Maybe SDL.Event -> Intent
-mkIntent = maybe Idle (eventToIntent . extractPayload)
+mkIntent = maybe Idle (payloadToIntent . extractPayload)
 
 
 extractPayload :: SDL.Event -> SDL.EventPayload
 extractPayload (SDL.Event _t p) = p
 
 
-eventToIntent :: SDL.EventPayload -> Intent
-eventToIntent SDL.QuitEvent         = Quit
-eventToIntent (SDL.KeyboardEvent k) = getKey k
-eventToIntent _                     = Idle
+payloadToIntent :: SDL.EventPayload -> Intent
+payloadToIntent SDL.QuitEvent         = Quit
+payloadToIntent (SDL.KeyboardEvent k) = getKey k
+payloadToIntent _                     = Idle
 
 
 getKey :: SDL.KeyboardEventData -> Intent
