@@ -23,8 +23,8 @@ main = C.withSDL $ do
       setColor r White
 
       whileM $
-        isContinue <$> SDL.pollEvent
-        >>= conditionallyRun (draw r)
+        C.isContinue <$> SDL.pollEvent
+        >>= C.conditionallyRun (draw r)
 
 
 draw :: SDL.Renderer -> IO ()
@@ -70,7 +70,7 @@ drawRectangle r s = SDL.drawRect r (Just s)
 
 drawLine :: (MonadIO m) => SDL.Renderer -> (CInt, CInt) -> (CInt, CInt) -> m ()
 drawLine r (ox, oy) (tx, ty) =
-  SDL.drawLine r (SDL.P (SDL.V2 ox oy)) (SDL.P (SDL.V2 tx ty))
+  SDL.drawLine r (C.mkPoint ox oy) (C.mkPoint tx ty)
 
 
 drawDot :: (MonadIO m) => SDL.Renderer -> (CInt, CInt) -> m ()
@@ -83,13 +83,3 @@ setColor r Red    = SDL.rendererDrawColor r $= SDL.V4 maxBound 0 0 maxBound
 setColor r Green  = SDL.rendererDrawColor r $= SDL.V4 0 maxBound 0 maxBound
 setColor r Blue   = SDL.rendererDrawColor r $= SDL.V4 0 0 maxBound maxBound
 setColor r Yellow = SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound 0 maxBound
-
-
-isContinue :: Maybe SDL.Event -> Bool
-isContinue Nothing = True
-isContinue (Just e) = not $ C.isQuitEvent e
-
-
-conditionallyRun :: (Monad m) => m a -> Bool -> m Bool
-conditionallyRun f True = True <$ f
-conditionallyRun _ False = pure False

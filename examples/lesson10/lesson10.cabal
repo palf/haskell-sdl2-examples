@@ -15,5 +15,4 @@ executable lesson10
                      , sdl2
                      , sdl2-image
                      , extra
-                     , containers
   default-language:    Haskell2010

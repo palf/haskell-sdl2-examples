@@ -21,8 +21,8 @@ main = C.withSDL $ C.withWindow "Lesson 06" (640, 480) $
     surface <- SDL.convertSurface image pixelFormat
 
     whileM $
-      isContinue <$> SDL.pollEvent
-      >>= conditionallyRun (draw w screen surface)
+      C.isContinue <$> SDL.pollEvent
+      >>= C.conditionallyRun (draw w screen surface)
 
     SDL.freeSurface image
     SDL.freeSurface surface
@@ -34,12 +34,3 @@ draw w s t
   = SDL.surfaceBlitScaled t Nothing s Nothing
   >> SDL.updateWindowSurface w
 
-
-isContinue :: Maybe SDL.Event -> Bool
-isContinue Nothing = True
-isContinue (Just e) = not $ C.isQuitEvent e
-
-
-conditionallyRun :: (Monad m) => m a -> Bool -> m Bool
-conditionallyRun f True = True <$ f
-conditionallyRun _ False = pure False

@@ -46,14 +46,7 @@ main = C.withSDL $ C.withSDLImage $ do
 
 
 loadTextures :: (MonadIO m) => SDL.Renderer -> PathMap -> m TextureMap
-loadTextures r = mapM (loadTexture r)
-
-
-loadTexture :: (MonadIO m) => SDL.Renderer -> FilePath -> m (SDL.Texture, SDL.TextureInfo)
-loadTexture r p = do
-  t <- SDL.Image.loadTexture r p
-  i <- SDL.queryTexture t
-  pure (t, i)
+loadTextures r = mapM (C.loadTextureWithInfo r)
 
 
 draw :: SDL.Renderer -> TextureMap -> IO ()
