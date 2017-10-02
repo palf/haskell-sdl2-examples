@@ -53,9 +53,7 @@ repeatUntil f p = go
 appLoop :: (MonadIO m) => (Application -> m ())-> Application -> m Application
 appLoop r a
   = updateApp a <$> pollIntents
-  >>= \a' -> do
-    r a'
-    pure a'
+  >>= \a' -> a' <$ r a'
 
 
 updateApp :: Application -> [Intent] -> Application

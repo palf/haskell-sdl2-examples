@@ -16,13 +16,13 @@ main = C.withSDL $ do
   C.withWindow "Lesson 07" (640, 480) $ \w ->
     C.withRenderer w $ \r -> do
 
-      tex <- SDL.Image.loadTexture r "./assets/texture.png"
+      t <- SDL.Image.loadTexture r "./assets/texture.png"
 
       whileM $
         isContinue <$> SDL.pollEvent
-        >>= conditionallyRun (draw r tex)
+        >>= conditionallyRun (draw r t)
 
-      SDL.destroyTexture tex
+      SDL.destroyTexture t
 
 
 draw :: (MonadIO m) => SDL.Renderer -> SDL.Texture -> m ()
@@ -38,5 +38,5 @@ isContinue (Just e) = not $ C.isQuitEvent e
 
 
 conditionallyRun :: (Monad m) => m a -> Bool -> m Bool
-conditionallyRun f True = const True <$> f
+conditionallyRun f True = True <$ f
 conditionallyRun _ False = pure False

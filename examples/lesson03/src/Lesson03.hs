@@ -31,5 +31,5 @@ isContinue (Just e) = not $ C.isQuitEvent e
 
 
 conditionallyRun :: (Monad m) => m a -> Bool -> m Bool
-conditionallyRun f True = const True <$> f
+conditionallyRun f True = True <$ f
 conditionallyRun _ False = pure False

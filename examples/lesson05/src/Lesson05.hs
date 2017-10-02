@@ -23,9 +23,7 @@ main = C.withSDL $ C.withWindow "Lesson 05" (640, 480) $
       isContinue <$> SDL.pollEvent
       >>= conditionallyRun (draw w screen surface)
 
-    SDL.freeSurface image
-    SDL.freeSurface surface
-    SDL.freeSurface screen
+    mapM_ SDL.freeSurface [image, surface, screen]
 
 
 draw :: (MonadIO m) => SDL.Window -> SDL.Surface -> SDL.Surface -> m ()
@@ -35,10 +33,9 @@ draw w s t
 
 
 isContinue :: Maybe SDL.Event -> Bool
-isContinue Nothing = True
-isContinue (Just e) = not $ C.isQuitEvent e
+isContinue = maybe True (not . C.isQuitEvent)
 
 
 conditionallyRun :: (Monad m) => m a -> Bool -> m Bool
-conditionallyRun f True = const True <$> f
+conditionallyRun f True = True <$ f
 conditionallyRun _ False = pure False

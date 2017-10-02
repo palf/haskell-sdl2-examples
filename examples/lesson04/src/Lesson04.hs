@@ -83,11 +83,11 @@ runIntent _ _ Idle
   = pure True
 
 runIntent cs f (SelectSurface key)
-  = const True <$> f (selectSurface cs key)
+  = True <$ f (selectSurface cs key)
 
 
 selectSurface :: [a] -> KeyPress -> a
-selectSurface xs k = xs !! (selectSurfaceIndex k)
+selectSurface xs k = xs !! selectSurfaceIndex k
 
 
 selectSurfaceIndex :: KeyPress -> Int
