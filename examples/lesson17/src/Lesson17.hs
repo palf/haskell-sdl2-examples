@@ -208,8 +208,8 @@ drawWorld r (t, ti) w = do
 
       s = C.mkRect 0 0 (tw / 2) (th / 2)
 
-      mFor c = s `moveTo` (getMask c)
-      pFor c = s `moveTo` (getPosition c)
+      mFor c = s `moveTo` getMask c
+      pFor c = s `moveTo` getPosition c
 
       renderPane p q
         = SDL.copy r t

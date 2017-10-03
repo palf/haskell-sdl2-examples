@@ -5,7 +5,6 @@
 module Main (main) where
 
 import qualified SDL
-import qualified SDL.Image
 import qualified Common as C
 
 import Control.Monad.IO.Class (MonadIO)

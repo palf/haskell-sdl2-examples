@@ -14,5 +14,4 @@ executable lesson15
                      , common
                      , monad-loops
                      , sdl2
-                     , sdl2-image
   default-language:    Haskell2010

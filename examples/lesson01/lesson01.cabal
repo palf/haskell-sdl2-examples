@@ -5,6 +5,7 @@ maintainer:          jack.palf@gmail.com
 cabal-version:       >=1.10
 build-type:          Simple
 
+
 executable lesson01
   hs-source-dirs:      src
   main-is:             Lesson01.hs
