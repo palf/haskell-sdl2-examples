@@ -6,7 +6,7 @@ import qualified SDL
 import qualified Common as C
 
 import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.Loops (iterateUntilM)
+import Control.Monad.Loops    (iterateUntilM)
 import Data.Foldable          (foldl')
 
 
@@ -68,15 +68,7 @@ main = C.withSDL $ C.withSDLImage $ do
 updateWorld :: World -> [SDL.Event] -> World
 updateWorld w
   = foldl' (flip applyIntent) w
-  . mkIntent
-
-
-mkIntent :: [SDL.Event] -> [Intent]
-mkIntent = fmap (payloadToIntent . extractPayload)
-
-
-extractPayload :: SDL.Event -> SDL.EventPayload
-extractPayload (SDL.Event _t p) = p
+  . fmap (payloadToIntent . SDL.eventPayload)
 
 
 payloadToIntent :: SDL.EventPayload -> Intent
