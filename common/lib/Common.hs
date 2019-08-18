@@ -3,25 +3,21 @@ module Common where
 import qualified SDL
 import qualified SDL.Image
 
-import Control.Monad          (void)
-import Control.Monad.IO.Class (MonadIO)
-import Data.Text              (Text)
+import           Control.Monad          (void)
+import           Control.Monad.IO.Class (MonadIO)
+import           Data.Text              (Text)
 
-import SDL (($=))
+import           SDL                    (($=))
 
 
 withSDL :: (MonadIO m) => m a -> m ()
-withSDL op = do
-  SDL.initialize []
-  void op
-  SDL.quit
+withSDL op
+  = SDL.initialize [] >> op >> SDL.quit
 
 
 withSDLImage :: (MonadIO m) => m a -> m ()
-withSDLImage op = do
-  SDL.Image.initialize []
-  void op
-  SDL.Image.quit
+withSDLImage op
+  = SDL.Image.initialize [] >> void op >> SDL.Image.quit
 
 
 withWindow :: (MonadIO m) => Text -> (Int, Int) -> (SDL.Window -> m a) -> m ()
@@ -61,13 +57,13 @@ isContinue = maybe True (not . isQuitEvent)
 
 
 conditionallyRun :: (Monad m) => m a -> Bool -> m Bool
-conditionallyRun f True = True <$ f
+conditionallyRun f True  = True <$ f
 conditionallyRun _ False = pure False
 
 
 isQuitEvent :: SDL.Event -> Bool
 isQuitEvent (SDL.Event _t SDL.QuitEvent) = True
-isQuitEvent _ = False
+isQuitEvent _                            = False
 
 
 setHintQuality :: (MonadIO m) => m ()

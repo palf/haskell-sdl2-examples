@@ -2,13 +2,13 @@
 
 module Main (main) where
 
+import qualified Common                 as C
 import qualified SDL
-import qualified Common as C
 
-import Control.Monad.IO.Class (MonadIO)
-import SDL                    (($=))
-import Foreign.C.Types        (CInt)
-import Control.Monad.Extra (whileM)
+import           Control.Monad.Extra    (whileM)
+import           Control.Monad.IO.Class (MonadIO)
+import           Foreign.C.Types        (CInt)
+import           SDL                    (($=))
 
 
 data Colour = White | Red | Blue | Green | Yellow

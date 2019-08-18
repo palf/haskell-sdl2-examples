@@ -1,17 +1,17 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main (main) where
 
+import qualified Common              as C
 import qualified SDL
 import qualified SDL.Image
-import qualified Common as C
 
-import Control.Monad.Loops (iterateUntilM)
-import Data.Foldable       (foldl')
-import GHC.Word            (Word8)
-import SDL                 (($=))
+import           Control.Monad.Loops (iterateUntilM)
+import           Data.Foldable       (foldl')
+import           GHC.Word            (Word8)
+import           SDL                 (($=))
 
 
 data World = World
@@ -60,7 +60,7 @@ main = C.withSDL $ C.withSDLImage $ do
       _ <- iterateUntilM
         exiting
         (\x ->
-          (updateWorld . foldl' (flip runIntent) x . mkIntent) <$> SDL.pollEvents
+          updateWorld . foldl' (flip runIntent) x . mkIntent <$> SDL.pollEvents
           >>= \x' -> x' <$ doRender x'
         )
         initialWorld
@@ -93,10 +93,10 @@ keyEventToIntent (SDL.KeyboardEventData _ SDL.Pressed _ keysym) =
 
 
 runIntent :: Intent -> World -> World
-runIntent Increase  = increase
-runIntent Decrease  = decrease
-runIntent Idle      = id
-runIntent Quit      = quit
+runIntent Increase = increase
+runIntent Decrease = decrease
+runIntent Idle     = id
+runIntent Quit     = quit
 
 
 increase :: World -> World

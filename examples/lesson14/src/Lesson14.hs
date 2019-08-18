@@ -1,17 +1,17 @@
-{-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
 module Main (main) where
 
+import qualified Common                 as C
 import qualified SDL
 import qualified SDL.Image
-import qualified Common as C
 
-import Control.Monad (unless)
-import Control.Monad.IO.Class (MonadIO)
-import Data.Foldable   (foldl')
+import           Control.Monad          (unless)
+import           Control.Monad.IO.Class (MonadIO)
+import           Data.Foldable          (foldl')
 
 
 data World = World
@@ -26,7 +26,7 @@ data Intent = Idle | Quit
 initialApp :: World
 initialApp = World
   { exiting = False
-  , frame   = 0
+  , frame   =  0
   }
 
 
@@ -61,10 +61,7 @@ updateApp a = stepFrame . foldl' applyIntent a
 
 
 pollIntents :: (MonadIO m) => m [Intent]
-pollIntents = eventToIntent `fmap2` SDL.pollEvents
-
-  where
-    fmap2 = fmap . fmap
+pollIntents = (fmap . fmap) eventToIntent SDL.pollEvents
 
 
 eventToIntent :: SDL.Event -> Intent
@@ -88,12 +85,15 @@ renderApp r t a = do
   SDL.present r
 
   where
-    x = (frame a `div` 8) `mod` 8
+    x = castTo8 (frame a)
     mask = fromIntegral <$> C.mkRect (x * 48) 0 48 48
 
     s = C.mkRect 0 0 192 (192 :: Double)
     w = C.mkRect 0 0 640 480
     pos = floor <$> centerWithin s w
+
+    castTo8 :: Int -> Int
+    castTo8 n = (n `div` 1020) `mod` 8
 
 
 centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a

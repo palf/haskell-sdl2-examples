@@ -2,16 +2,16 @@
 
 module Main (main) where
 
-import Lesson12.Types
+import qualified Lesson12.Rendering   as R
 import qualified Lesson12.Transitions as T
-import qualified Lesson12.Rendering as R
+import           Lesson12.Types
 
+import qualified Common               as C
 import qualified SDL
 import qualified SDL.Image
-import qualified Common as C
 
-import Control.Monad.Loops (iterateUntilM)
-import Data.Foldable (foldl')
+import           Control.Monad.Loops  (iterateUntilM)
+import           Data.Foldable        (foldl')
 
 
 initialWorld :: World

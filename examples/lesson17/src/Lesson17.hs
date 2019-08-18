@@ -2,11 +2,11 @@
 
 module Main (main) where
 
+import qualified Common              as C
 import qualified SDL
-import qualified Common as C
 
-import Control.Monad.Loops    (iterateUntilM)
-import Data.Foldable          (foldl')
+import           Control.Monad.Loops (iterateUntilM)
+import           Data.Foldable       (foldl')
 
 
 data Intent
@@ -161,13 +161,13 @@ leaveWorld q w = w { panes = panes' }
 
 setOut :: Pane -> Pane
 setOut Down = Down
-setOut _ = Out
+setOut _    = Out
 
 
 setOver :: Pane -> Pane
 setOver Down = Down
-setOver Up = Up
-setOver _ = Over
+setOver Up   = Up
+setOver _    = Over
 
 
 setDown :: Pane -> Pane
@@ -176,7 +176,7 @@ setDown _ = Down
 
 setUp :: Pane -> Pane
 setUp Down = Up
-setUp p = p
+setUp p    = p
 
 
 idleWorld :: World -> World

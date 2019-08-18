@@ -2,12 +2,12 @@
 
 module Main (main) where
 
+import qualified Common                 as C
 import qualified SDL
-import qualified Common as C
 
-import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.Loops    (iterateUntilM)
-import Data.Foldable          (foldl')
+import           Control.Monad.IO.Class (MonadIO)
+import           Control.Monad.Loops    (iterateUntilM)
+import           Data.Foldable          (foldl')
 
 
 data FlipDirection
@@ -83,14 +83,14 @@ keyEventToIntent (SDL.KeyboardEventData _ SDL.Pressed _ keysym) =
 
     SDL.KeycodeEscape -> Quit
 
-    SDL.KeycodeQ -> Rotate Counter
-    SDL.KeycodeE -> Rotate Clock
+    SDL.KeycodeQ      -> Rotate Counter
+    SDL.KeycodeE      -> Rotate Clock
 
-    SDL.KeycodeA -> Flip Horizontal
-    SDL.KeycodeD -> Flip Vertical
+    SDL.KeycodeA      -> Flip Horizontal
+    SDL.KeycodeD      -> Flip Vertical
 
-    SDL.KeycodeR -> Reset
-    _            -> Idle
+    SDL.KeycodeR      -> Reset
+    _                 -> Idle
 
 keyEventToIntent _ = Idle
 

@@ -6,7 +6,7 @@ module Lesson12.Transitions
   , exit
   ) where
 
-import Lesson12.Types
+import           Lesson12.Types
 
 
 stepWorld :: World -> World

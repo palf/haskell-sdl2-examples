@@ -2,12 +2,12 @@ module Lesson12.Rendering
   ( renderWorld
   ) where
 
-import Lesson12.Types
+import           Lesson12.Types
 
 import qualified SDL
 
-import Control.Monad.IO.Class (MonadIO)
-import SDL (($=))
+import           Control.Monad.IO.Class (MonadIO)
+import           SDL                    (($=))
 
 
 renderWorld :: (MonadIO m) => SDL.Renderer -> SDL.Texture -> World -> m ()

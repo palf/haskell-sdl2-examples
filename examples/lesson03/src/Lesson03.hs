@@ -2,10 +2,10 @@
 
 module Main (main) where
 
+import qualified Common              as C
 import qualified SDL
-import qualified Common as C
 
-import Control.Monad.Extra    (whileM)
+import           Control.Monad.Extra (whileM)
 
 
 main :: IO ()

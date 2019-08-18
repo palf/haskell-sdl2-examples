@@ -2,11 +2,11 @@
 
 module Main (main) where
 
+import qualified Common              as C
 import qualified SDL
-import qualified Common as C
 
-import Control.Monad.Extra (whileM)
-import SDL                 (($=))
+import           Control.Monad.Extra (whileM)
+import           SDL                 (($=))
 
 
 windowSize :: (Int, Int)

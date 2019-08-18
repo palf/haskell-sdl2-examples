@@ -1,14 +1,14 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main (main) where
 
+import qualified Common              as C
 import qualified SDL
-import qualified Common as C
 
-import Control.Monad.Extra    (whileM)
-import Prelude hiding (Left, Right)
+import           Control.Monad.Extra (whileM)
+import           Prelude             hiding (Left, Right)
 
 data Intent
   = SelectSurface Direction

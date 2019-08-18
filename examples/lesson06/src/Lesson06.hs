@@ -2,12 +2,12 @@
 
 module Main (main) where
 
+import qualified Common                 as C
 import qualified SDL
 import qualified SDL.Image
-import qualified Common as C
 
-import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.Extra (whileM)
+import           Control.Monad.Extra    (whileM)
+import           Control.Monad.IO.Class (MonadIO)
 
 
 main :: IO ()

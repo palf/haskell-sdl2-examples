@@ -1,15 +1,15 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main (main) where
 
+import qualified Common                 as C
 import qualified SDL
-import qualified Common as C
 
-import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.Extra (whileM)
-import SDL                 (($=))
+import           Control.Monad.Extra    (whileM)
+import           Control.Monad.IO.Class (MonadIO)
+import           SDL                    (($=))
 
 data AssetMap a = AssetMap
   { background :: a

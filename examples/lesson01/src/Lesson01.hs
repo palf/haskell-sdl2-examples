@@ -2,8 +2,8 @@
 
 module Main (main) where
 
-import qualified SDL
 import qualified Common as C
+import qualified SDL
 
 
 main :: IO ()
