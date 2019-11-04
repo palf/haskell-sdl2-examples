@@ -23,10 +23,15 @@ data World = World
 data Intent = Idle | Quit
 
 
+-- modify this to match your monitor refresh rate
+frameRate :: Int
+frameRate = 200
+
+
 initialApp :: World
 initialApp = World
   { exiting = False
-  , frame   =  0
+  , frame   = 0
   }
 
 
@@ -85,15 +90,13 @@ renderApp r t a = do
   SDL.present r
 
   where
-    x = castTo8 (frame a)
+    animDurationSeconds = 3
+    x = (frame a `div` (animDurationSeconds * frameRate)) `mod` 8
     mask = fromIntegral <$> C.mkRect (x * 48) 0 48 48
 
     s = C.mkRect 0 0 192 (192 :: Double)
     w = C.mkRect 0 0 640 480
     pos = floor <$> centerWithin s w
-
-    castTo8 :: Int -> Int
-    castTo8 n = (n `div` 1020) `mod` 8
 
 
 centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a
