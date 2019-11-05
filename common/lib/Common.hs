@@ -11,8 +11,18 @@ import           SDL                    (($=))
 
 
 withSDL :: (MonadIO m) => m a -> m ()
-withSDL op
-  = SDL.initialize [] >> op >> SDL.quit
+withSDL op = do
+  SDL.initialize
+    [ SDL.InitTimer
+    , SDL.InitAudio
+    , SDL.InitVideo
+    , SDL.InitJoystick
+    , SDL.InitHaptic
+    , SDL.InitGameController
+    , SDL.InitEvents
+    ]
+  op
+  SDL.quit
 
 
 withSDLImage :: (MonadIO m) => m a -> m ()

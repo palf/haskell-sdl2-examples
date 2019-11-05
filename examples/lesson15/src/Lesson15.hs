@@ -133,7 +133,7 @@ renderWorld
   -> World
   -> m ()
 
-renderWorld r (t, ti) a = do
+renderWorld r (t, ti) w = do
   SDL.clear r
   SDL.copyEx r t (Just mask) (Just pos) deg Nothing flips
   SDL.present r
@@ -146,13 +146,13 @@ renderWorld r (t, ti) a = do
 
     s :: SDL.Rectangle Double
     s = C.mkRect 0 0 640 480
-    w = C.mkRect 0 0 tw th
+    box = C.mkRect 0 0 tw th
 
     mask = floor <$> s
-    pos = floor <$> centerWithin w s
+    pos = floor <$> centerWithin box s
 
-    deg = fromIntegral $ degrees a
-    flips = uncurry SDL.V2 (flipped a)
+    deg = fromIntegral $ degrees w
+    flips = uncurry SDL.V2 (flipped w)
 
 
 centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a

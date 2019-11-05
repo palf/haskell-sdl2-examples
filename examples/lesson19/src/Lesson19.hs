@@ -4,27 +4,37 @@ module Main (main) where
 
 import qualified Common              as C
 import qualified SDL
+import qualified SDL.Image
 
+import Foreign.C.Types
+import Control.Monad.IO.Class
+import Data.Word
+import Data.Text hiding (foldl')
+import Data.Vector ((!?))
 import           Control.Monad.Loops (iterateUntilM)
 import           Data.Foldable       (foldl')
+
+
+loggerInfo :: (MonadIO m) => Text -> m ()
+loggerInfo = liftIO . print
 
 
 data Intent
   = Idle
   | Quit
-  | Target CInt Cint
+  | ChangeAngle Double
 
 
 data World = World
   { exiting :: Bool
-  , target  :: (CInt, CInt)
+  , angle  :: Double
   }
 
 
 initialWorld :: World
 initialWorld = World
   { exiting = False
-  , target = (0, 0)
+  , angle = 0
   }
 
 
@@ -33,35 +43,72 @@ main = C.withSDL $ C.withSDLImage $ do
   C.setHintQuality
   C.withWindow "Lesson 19" (640, 480) $ \w ->
     C.withRenderer w $ \r -> do
-      t <- C.loadTextureWithInfo r "./assets/arrow.png"
+      tx <- C.loadTextureWithInfo r "./assets/arrow.png"
 
-      g <- SDL.openGameController 0
-      if isNothing g then fail "no controller found" else print "found controller"
+      g <- openJoystick
 
-      disableEventPolling [SDL.SDL_CONTROLLERAXISMOTION, SDL.SDL_JOYAXISMOTION]
+      case g of
+        Nothing ->
+          loggerInfo "no controller found"
 
-      let doRender = renderWorld r t
+        Just g' ->  do
+          loggerInfo "found controller"
 
-      _ <- iterateUntilM
-        exiting
-        (\x ->
-          updateWorld x <$> SDL.pollEvents
-          >>= \x' -> x' <$ doRender x'
-        )
-        initialWorld
+          -- disableEventPolling [SDL.SDL_CONTROLLERAXISMOTION, SDL.SDL_JOYAXISMOTION]
 
-      SDL.closeGameController g
-      SDL.destroyTexture (fst t)
+          let doRender = renderWorld r tx
 
+          _ <- iterateUntilM
+            exiting
+            (sideEffect (runUpdate g') doRender)
+            initialWorld
 
-disableEventPolling :: [Word32] -> IO ()
-disableEventPolling = mapM_ (`SDL.eventState` 0)
+          SDL.closeJoystick g'
+      SDL.destroyTexture (fst tx)
 
 
-updateWorld :: World -> [SDL.Event] -> World
-updateWorld w
-  = foldl' (flip applyIntent) w
-  . fmap (payloadToIntent . SDL.eventPayload)
+openJoystick :: IO (Maybe SDL.Joystick)
+openJoystick = do
+  js <- SDL.availableJoysticks
+  maybe (pure Nothing) (fmap Just . SDL.openJoystick) (js !? 0)
+
+
+-- disableEventPolling :: [Word32] -> IO ()
+-- disableEventPolling = mapM_ (`SDL.eventState` 0)
+
+
+runUpdate :: SDL.Joystick -> World -> IO World
+runUpdate g w = do
+  es <- SDL.pollEvents
+  let es' = fmap (payloadToIntent . SDL.eventPayload) es
+  s <- getControllerState g
+  let s' = mkTarget s
+
+  pure $ updateWorld w (es' <> [ChangeAngle s'])
+
+  where
+    mkTarget ( a,  b)
+      | safe a && safe b = 0
+      | otherwise = (360 / (2 * pi) ) * atan2 b a
+
+    safe x = -4096 < x && x < 4096
+
+
+getControllerState :: SDL.Joystick -> IO (Double, Double)
+getControllerState controller = do
+  xValue <- SDL.axisPosition controller 0
+  yValue <- SDL.axisPosition controller 1
+  pure (fromIntegral xValue, fromIntegral yValue)
+
+
+updateWorld :: World -> [Intent] -> World
+updateWorld = foldl' (flip applyIntent)
+
+
+applyIntent :: Intent -> World -> World
+applyIntent Quit = quitWorld
+applyIntent Idle = idleWorld
+applyIntent (ChangeAngle p) = targetPoint p
 
 
 payloadToIntent :: SDL.EventPayload -> Intent
@@ -73,78 +120,53 @@ idleWorld :: World -> World
 idleWorld = id
 
 
+targetPoint :: Double -> World -> World
+targetPoint x w = w { angle = x }
+
+
 quitWorld :: World -> World
 quitWorld w = w { exiting = True }
 
 
-renderWorld :: SDL.Renderer -> SDL.Texture -> World -> IO ()
-renderWorld r t w = do
+renderWorld :: SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> IO ()
+renderWorld r tx w = do
   SDL.clear r
-  drawWorld r t w
+  drawWorld r tx w
   SDL.present r
 
 
-drawWorld :: SDL.Renderer -> SDL.Texture -> World -> IO ()
-drawWorld r tex w
-  = SDL.copyEx r tex mask pos degrees Nothing flip
+drawWorld :: SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> IO ()
+drawWorld r (t, ti) w
+  = SDL.copyEx r t (Just mask) (Just pos) deg Nothing flips
 
-    where
-      w = 89
-      h = 50
-      sprite = SDL.mkRect 1 0 w h
-      mask = Just sprite
-      pos = Just (sprite `moveBy` superScale x)
-      x = 1
-      degrees = 0
-      flips = SDL.V2 False False
+  where
+    tw :: Double
+    th :: Double
+    tw = fromIntegral $ SDL.textureWidth ti
+    th = fromIntegral $ SDL.textureHeight ti
 
+    s :: SDL.Rectangle Double
+    s = C.mkRect 0 0 640 480
+    box = C.mkRect 0 0 tw th
 
+    mask = floor <$> s
+    pos = floor <$> centerWithin box s
 
-getMask :: (Num a) => Pane -> (a, a)
-getMask Out  = (  0,   0)
-getMask Over = (320,   0)
-getMask Down = (  0, 240)
-getMask Up   = (320, 240)
+    deg = CDouble $ angle w
+    flips = SDL.V2 False False
 
 
-getPosition :: (Num a) => Quadrant -> (a, a)
-getPosition TopLeft     = (  0,   0)
-getPosition TopRight    = (320,   0)
-getPosition BottomLeft  = (  0, 240)
-getPosition BottomRight = (320, 240)
+sideEffect :: (Monad m) => (a -> m b) -> (b -> m ()) -> a -> m b
+sideEffect op ef x = do
+  x' <- op x
+  ef x'
+  pure x'
 
 
-moveTo :: SDL.Rectangle a -> (a, a) -> SDL.Rectangle a
-moveTo (SDL.Rectangle _ d) (x, y) = SDL.Rectangle (C.mkPoint x y) d
 
+centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a
+centerWithin (SDL.Rectangle _ iz) (SDL.Rectangle (SDL.P op) oz)
+  = SDL.Rectangle p iz
 
-superScale :: (Double, Double) -> (Int, Int)
-superScale = pairMap $ floor . (*) 200
-
-
-pairMap :: (a -> b) -> (a, a) -> (b, b)
-pairMap f (x, y) = (f x, f y)
-
-
-getControllerState :: Lib.GameController -> IO (Double, Double)
-getControllerState controller = do
-    xValue <- getAxisState controller 0
-    yValue <- getAxisState controller 1
-    let range = hypotenuse xValue yValue
-    let deadZone = 8000 ^ (2 :: Integer)
-    let carpetValue = if range < deadZone
-        then (0, 0)
-        else pairMap ssscale (xValue, yValue)
-    pure carpetValue
-      where ssscale x = fromIntegral x / 32768
-
-
-hypotenuse :: (Num a) => a -> a -> a
-hypotenuse a b = a ^ two + b ^ two
-  where two = 2 :: Integer
-
-
-getAxisState :: Lib.GameController -> Lib.GameControllerAxis -> IO Int
-getAxisState controller index = do
-    axis <- Lib.gameControllerGetAxis controller index
-    pure $ fromIntegral axis
+  where
+    p = SDL.P $ op + (oz - iz) / 2
