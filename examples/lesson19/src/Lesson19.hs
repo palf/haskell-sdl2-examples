@@ -2,30 +2,26 @@
 
 module Main (main) where
 
-import qualified Common              as C
+import qualified Common                 as C
 import qualified SDL
 
-import Foreign.C.Types
-import Control.Monad.IO.Class
-import Data.Text hiding (foldl')
-import Data.Vector ((!?))
-import           Control.Monad.Loops (iterateUntilM)
-import           Data.Foldable       (foldl')
+import           Control.Monad.IO.Class
+import           Control.Monad.Loops    (iterateUntilM)
+import           Data.Foldable          (foldl')
+import           Data.Text              hiding (foldl')
+import           Data.Vector            ((!?))
+import           Foreign.C.Types
 
 
 loggerInfo :: (MonadIO m) => Text -> m ()
 loggerInfo = liftIO . print
 
 
-data Intent
-  = Idle
-  | Quit
-  | ChangeAngle Double
-
+-- World definition
 
 data World = World
   { exiting :: Bool
-  , angle  :: Double
+  , angle   :: Double
   }
 
 
@@ -35,6 +31,34 @@ initialWorld = World
   , angle = 0
   }
 
+
+setAngle :: Double -> World -> World
+setAngle x w = w { angle = x }
+
+
+quitWorld :: World -> World
+quitWorld w = w { exiting = True }
+
+
+-- Intents
+
+data Intent
+  = Idle
+  | Quit
+  | ChangeAngle Double
+
+
+applyIntent :: Intent -> World -> World
+applyIntent Idle            = id
+applyIntent Quit            = quitWorld
+applyIntent (ChangeAngle p) = setAngle p
+
+
+updateWorld :: World -> [Intent] -> World
+updateWorld = foldl' (flip applyIntent)
+
+
+----------------------------------
 
 main :: IO ()
 main = C.withSDL $ C.withSDLImage $ do
@@ -65,24 +89,25 @@ main = C.withSDL $ C.withSDLImage $ do
       SDL.destroyTexture (fst tx)
 
 
-openJoystick :: IO (Maybe SDL.Joystick)
+openJoystick :: (MonadIO m) => m (Maybe SDL.Joystick)
 openJoystick = do
   js <- SDL.availableJoysticks
   maybe (pure Nothing) (fmap Just . SDL.openJoystick) (js !? 0)
 
 
--- disableEventPolling :: [Word32] -> IO ()
+-- disableEventPolling :: (MonadIO m) => [Word32] -> m ()
 -- disableEventPolling = mapM_ (`SDL.eventState` 0)
 
 
-runUpdate :: SDL.Joystick -> World -> IO World
+runUpdate :: (MonadIO m) => SDL.Joystick -> World -> m World
 runUpdate g w = do
   es <- SDL.pollEvents
-  let es' = fmap (payloadToIntent . SDL.eventPayload) es
+  let es' = payloadToIntent . SDL.eventPayload <$> es
+
   s <- getControllerState g
   let s' = mkTarget s
-  liftIO $ print s
 
+  liftIO $ print s
   pure $ updateWorld w (es' <> [ChangeAngle s'])
 
   where
@@ -93,55 +118,34 @@ runUpdate g w = do
     safe x = -4096 < x && x < 4096
 
 
-getControllerState :: SDL.Joystick -> IO (Double, Double)
+getControllerState :: (MonadIO m) => SDL.Joystick -> m (Double, Double)
 getControllerState controller = do
   xValue <- SDL.axisPosition controller 0
   yValue <- SDL.axisPosition controller 1
   pure (fromIntegral xValue, fromIntegral yValue)
 
 
-updateWorld :: World -> [Intent] -> World
-updateWorld = foldl' (flip applyIntent)
-
-
-applyIntent :: Intent -> World -> World
-applyIntent Quit = quitWorld
-applyIntent Idle = idleWorld
-applyIntent (ChangeAngle p) = targetPoint p
-
 
 payloadToIntent :: SDL.EventPayload -> Intent
-payloadToIntent SDL.QuitEvent            = Quit
-payloadToIntent _                        = Idle
+payloadToIntent SDL.QuitEvent = Quit
+payloadToIntent _             = Idle
 
 
-idleWorld :: World -> World
-idleWorld = id
-
-
-targetPoint :: Double -> World -> World
-targetPoint x w = w { angle = x }
-
-
-quitWorld :: World -> World
-quitWorld w = w { exiting = True }
-
-
-renderWorld :: SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> IO ()
+renderWorld :: (MonadIO m) => SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> m ()
 renderWorld r tx w = do
   SDL.clear r
   drawWorld r tx w
   SDL.present r
 
 
-drawWorld :: SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> IO ()
+drawWorld :: (MonadIO m) => SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> m ()
 drawWorld r (t, ti) w
   = SDL.copyEx r t (Just mask) (Just pos) deg Nothing flips
 
   where
     tw :: Double
-    th :: Double
     tw = fromIntegral $ SDL.textureWidth ti
+    th :: Double
     th = fromIntegral $ SDL.textureHeight ti
 
     s :: SDL.Rectangle Double
@@ -160,7 +164,6 @@ sideEffect op ef x = do
   x' <- op x
   ef x'
   pure x'
-
 
 
 centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a
