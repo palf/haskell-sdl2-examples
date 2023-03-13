@@ -2,11 +2,12 @@
 
 module Main (main) where
 
-import qualified Common              as C
+import qualified Common                 as C
 import qualified SDL
 
-import           Control.Monad.Loops (iterateUntilM)
-import           Data.Foldable       (foldl')
+import           Control.Monad.IO.Class (MonadIO)
+import           Control.Monad.Loops    (iterateUntilM)
+import           Data.Foldable          (foldl')
 
 
 data Intent
@@ -187,14 +188,14 @@ quitWorld :: World -> World
 quitWorld w = w { exiting = True }
 
 
-renderWorld :: SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> IO ()
+renderWorld :: (MonadIO m) => SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> m ()
 renderWorld r t w = do
   SDL.clear r
   drawWorld r t w
   SDL.present r
 
 
-drawWorld :: SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> IO ()
+drawWorld :: (MonadIO m) => SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> m ()
 drawWorld r (t, ti) w = do
   renderPane (topLeft     $ panes w) TopLeft
   renderPane (topRight    $ panes w) TopRight

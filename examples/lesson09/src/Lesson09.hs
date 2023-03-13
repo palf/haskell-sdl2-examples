@@ -39,7 +39,7 @@ main = C.withSDL $
       SDL.destroyTexture t
 
 
-draw :: SDL.Renderer -> SDL.Texture -> IO ()
+draw :: (MonadIO m) => SDL.Renderer -> SDL.Texture -> m ()
 draw r t = do
   SDL.clear r
 

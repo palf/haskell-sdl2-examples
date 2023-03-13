@@ -2,11 +2,12 @@
 
 module Main (main) where
 
-import qualified Common              as C
+import qualified Common                 as C
 import qualified SDL
 
-import           Control.Monad.Extra (whileM)
-import           SDL                 (($=))
+import           Control.Monad.Extra    (whileM)
+import           Control.Monad.IO.Class (MonadIO)
+import           SDL                    (($=))
 
 
 windowSize :: (Int, Int)
@@ -31,7 +32,7 @@ main = C.withSDL $ C.withSDLImage $ do
       SDL.destroyTexture (fst t)
 
 
-draw :: SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> IO ()
+draw :: (MonadIO m) => SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> m ()
 draw r (t, ti) = do
   SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound maxBound maxBound
   SDL.clear r
@@ -72,12 +73,12 @@ moveTo (SDL.Rectangle _ d) (x, y) = SDL.Rectangle (C.mkPoint x y) d
 
 
 renderTexture
-  :: (Integral a)
+  :: (Integral a, MonadIO m)
   => SDL.Renderer
   -> SDL.Texture
   -> SDL.Rectangle a
   -> SDL.Rectangle a
-  -> IO ()
+  -> m ()
 
 renderTexture r t mask pos =
   SDL.copy r t (Just $ fromIntegral <$> mask) (Just $ fromIntegral <$> pos)

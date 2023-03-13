@@ -11,6 +11,7 @@ import           Control.Monad.Extra    (whileM)
 import           Control.Monad.IO.Class (MonadIO)
 import           SDL                    (($=))
 
+
 data AssetMap a = AssetMap
   { background :: a
   , foreground :: a
@@ -50,7 +51,7 @@ loadTextures :: (MonadIO m) => SDL.Renderer -> PathMap -> m TextureMap
 loadTextures r = mapM (C.loadTextureWithInfo r)
 
 
-draw :: SDL.Renderer -> TextureMap -> IO ()
+draw :: (MonadIO m) => SDL.Renderer -> TextureMap -> m ()
 draw r ts = do
   SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound maxBound maxBound
   SDL.clear r
@@ -62,16 +63,14 @@ draw r ts = do
 
 
 renderTexture
-  :: (Num a, RealFrac a)
+  :: (Num a, RealFrac a, MonadIO m)
   => SDL.Renderer
   -> (SDL.Texture, SDL.TextureInfo)
   -> (a, a)
-  -> IO ()
+  -> m ()
 
 renderTexture r (t, ti) (x, y)
-  = SDL.copy r t
-      Nothing
-      (Just $ C.mkRect x' y' a b)
+  = SDL.copy r t Nothing (Just $ C.mkRect x' y' a b)
 
   where
     x' = floor x

@@ -4,14 +4,15 @@
 
 module Main (main) where
 
-import qualified Common              as C
+import qualified Common                 as C
 import qualified SDL
 import qualified SDL.Image
 
-import           Control.Monad.Loops (iterateUntilM)
-import           Data.Foldable       (foldl')
-import           GHC.Word            (Word8)
-import           SDL                 (($=))
+import           Control.Monad.IO.Class (MonadIO)
+import           Control.Monad.Loops    (iterateUntilM)
+import           Data.Foldable          (foldl')
+import           GHC.Word               (Word8)
+import           SDL                    (($=))
 
 
 data World = World
@@ -115,7 +116,7 @@ updateWorld :: World -> World
 updateWorld = id
 
 
-renderWorld :: SDL.Renderer -> TextureMap SDL.Texture -> World -> IO ()
+renderWorld :: (MonadIO m) => SDL.Renderer -> TextureMap SDL.Texture -> World -> m ()
 renderWorld r ts w = do
   let fg = foreground ts
   let bg = background ts
