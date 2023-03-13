@@ -75,17 +75,20 @@ mkPoint :: a -> a -> SDL.Point SDL.V2 a
 mkPoint x y = SDL.P (SDL.V2 x y)
 
 
-mkRect :: a -> a -> a -> a-> SDL.Rectangle a
+mkRect :: a -> a -> a -> a -> SDL.Rectangle a
 mkRect x y w h = SDL.Rectangle o z
   where
     o = SDL.P (SDL.V2 x y)
     z = SDL.V2 w h
 
 
+moveTo :: SDL.Rectangle a -> (a, a) -> SDL.Rectangle a
+moveTo (SDL.Rectangle _ d) (x, y) = SDL.Rectangle (mkPoint x y) d
+
+
 centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a
 centerWithin (SDL.Rectangle _ iz) (SDL.Rectangle (SDL.P op) oz)
   = SDL.Rectangle p iz
-
   where
     p = SDL.P $ op + (oz - iz) / 2
 

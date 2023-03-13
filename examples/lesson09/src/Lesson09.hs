@@ -57,13 +57,8 @@ main = C.withSDL $
       SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound maxBound maxBound
       t <- SDL.Image.loadTexture r "./assets/viewport.png"
 
-      let doRender = draw r t
-
-      whileM $ do
-        ev <- SDL.pollEvents
-        if C.hasQuitEvent ev
-          then pure False
-          else doRender >> pure True
+      draw r t
+      whileM $ not . C.hasQuitEvent <$> SDL.pollEvents
 
       SDL.destroyTexture t
 

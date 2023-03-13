@@ -12,7 +12,7 @@ import qualified SDL.Raw.Timer          as Raw
 
 import           Control.Monad          (unless)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
-import           Data.Foldable          (foldl')
+import           Data.List.Extra
 
 
 data World = World
@@ -21,7 +21,7 @@ data World = World
   } deriving (Show)
 
 
-data Intent = Idle | Quit
+data Intent = Quit deriving (Show)
 
 
 initialApp :: World
@@ -53,30 +53,21 @@ measureFPS op = do
     pure x
 
 
-eventToIntent :: SDL.Event -> Intent
-eventToIntent (SDL.Event _t SDL.QuitEvent) = Quit
-eventToIntent _                            = Idle
+pollIntents :: (MonadIO m) => m (Maybe Intent)
+pollIntents = firstJust f . fmap SDL.eventPayload <$> SDL.pollEvents
+  where
+    f :: SDL.EventPayload -> Maybe Intent
+    f SDL.QuitEvent = Just Quit
+    f _             = Nothing
 
 
-pollIntents :: (MonadIO m) => m [Intent]
-pollIntents = (fmap . fmap) eventToIntent SDL.pollEvents
-
-
-applyIntent :: World -> Intent -> World
-applyIntent a Quit = a { exiting = True }
-applyIntent a Idle = a
-
-
-stepFrame :: World -> World
-stepFrame a = a { frame = frame a + 1 }
-
-
-updateApp :: World -> [Intent] -> World
-updateApp a = stepFrame . foldl' applyIntent a
+updateApp :: World -> Maybe Intent -> World
+updateApp a Nothing     = a { frame = frame a + 1 }
+updateApp a (Just Quit) = a { exiting = True }
 
 
 appLoop :: (MonadIO m) => (World -> m ()) -> World -> m World
-appLoop r w = measureFPS $ do
+appLoop r w = do
   xs <- pollIntents
   let w' = updateApp w xs
   r w'
@@ -90,17 +81,21 @@ renderApp r t a = do
   SDL.present r
 
   where
-    animDurationSeconds = 1
-    animFrames = 8
-    framesPerSecond = 60
+    framesPerSecond = 60 :: Double
+    animDurationSeconds = 0.8 :: Double
+    animFrames = 8 :: Int
 
-    x' = (animFrames * frame a) `div` (animDurationSeconds * framesPerSecond)
-    x = x' `mod` animFrames
+    -- ax :: seconds for one frame of animation
+    -- fx :: number of seconds total
+    ax = fromIntegral animFrames / animDurationSeconds
+    fx = fromIntegral (frame a) / framesPerSecond
 
-    mask = fromIntegral <$> C.mkRect (x * 48) 0 48 48
+    x = floor (ax * fx) `mod` animFrames
+
+    mask = C.mkRect (fromIntegral x * 48) 0 48 48
     s = C.mkRect 0 0 192 (192 :: Double)
     w = C.mkRect 0 0 640 480
-    pos = floor <$> C.centerWithin s w
+    pos = round <$> C.centerWithin s w
 
 
 main :: IO ()

@@ -66,10 +66,9 @@ main = C.withSDL $ C.withSDLImage $ do
   C.setHintQuality
   C.withWindow "Lesson 10" (640, 480) $ \w ->
     C.withRenderer w $ \r -> do
-
       ts <- loadTextures r assetPaths
-      draw r ts
 
+      draw r ts
       whileM $ not . C.hasQuitEvent <$> SDL.pollEvents
 
       mapM_ (SDL.destroyTexture . fst) ts

@@ -5,6 +5,7 @@ module Main (main) where
 import qualified Common                 as C
 import qualified SDL
 
+import           Common                 (moveTo)
 import           Control.Monad.IO.Class (MonadIO)
 import           Control.Monad.Loops    (iterateUntilM)
 import           Data.Foldable          (foldl')
@@ -182,10 +183,6 @@ getPosition TopLeft     = (  0,   0)
 getPosition TopRight    = (320,   0)
 getPosition BottomLeft  = (  0, 240)
 getPosition BottomRight = (320, 240)
-
-
-moveTo :: SDL.Rectangle a -> (a, a) -> SDL.Rectangle a
-moveTo (SDL.Rectangle _ d) (x, y) = SDL.Rectangle (C.mkPoint x y) d
 
 
 drawWorld :: (MonadIO m) => SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> m ()

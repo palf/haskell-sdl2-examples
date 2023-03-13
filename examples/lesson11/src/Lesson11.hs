@@ -5,6 +5,7 @@ module Main (main) where
 import qualified Common                 as C
 import qualified SDL
 
+import           Common                 (moveTo)
 import           Control.Monad.Extra    (whileM)
 import           Control.Monad.IO.Class (MonadIO)
 import           SDL                    (($=))
@@ -24,10 +25,6 @@ renderTexture
 
 renderTexture r t mask pos =
   SDL.copy r t (Just $ fromIntegral <$> mask) (Just $ fromIntegral <$> pos)
-
-
-moveTo :: SDL.Rectangle a -> (a, a) -> SDL.Rectangle a
-moveTo (SDL.Rectangle _ d) (x, y) = SDL.Rectangle (C.mkPoint x y) d
 
 
 draw :: (MonadIO m) => SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> m ()
@@ -69,15 +66,9 @@ main = C.withSDL $ C.withSDLImage $ do
   C.setHintQuality
   C.withWindow "Lesson 11" windowSize $ \w ->
     C.withRenderer w $ \r -> do
-
       t <- C.loadTextureWithInfo r "./assets/dots.png"
-      let doRender = draw r t
 
-      whileM $ do
-        ev <- SDL.pollEvents
-        if C.hasQuitEvent ev
-          then pure False
-          else doRender >> pure True
+      draw r t
+      whileM $ not . C.hasQuitEvent <$> SDL.pollEvents
 
       SDL.destroyTexture (fst t)
-

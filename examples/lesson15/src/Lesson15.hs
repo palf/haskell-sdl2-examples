@@ -152,5 +152,3 @@ main = C.withSDL $ C.withSDLImage $ do
         initialWorld
 
       SDL.destroyTexture (fst tx)
-
-
