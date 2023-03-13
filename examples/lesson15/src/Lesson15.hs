@@ -104,14 +104,6 @@ updateWorld w
   . fmap (payloadToIntent . SDL.eventPayload)
 
 
-centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a
-centerWithin (SDL.Rectangle _ iz) (SDL.Rectangle (SDL.P op) oz)
-  = SDL.Rectangle p iz
-
-  where
-    p = SDL.P $ op + (oz - iz) / 2
-
-
 renderWorld
   :: (MonadIO m)
   => SDL.Renderer
@@ -135,7 +127,7 @@ renderWorld r (t, ti) w = do
     box = C.mkRect 0 0 tw th
 
     mask = floor <$> s
-    pos = floor <$> centerWithin box s
+    pos = floor <$> C.centerWithin box s
 
     deg = fromIntegral $ degrees w
     flips = uncurry SDL.V2 (flipped w)

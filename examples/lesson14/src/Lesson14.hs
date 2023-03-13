@@ -31,14 +31,6 @@ initialApp = World
   }
 
 
-centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a
-centerWithin (SDL.Rectangle _ iz) (SDL.Rectangle (SDL.P op) oz)
-  = SDL.Rectangle p iz
-
-  where
-    p = SDL.P $ op + (oz - iz) / 2
-
-
 repeatUntil :: (Monad m) => (a -> m a) -> (a -> Bool) -> a -> m ()
 repeatUntil f p = loop
   where loop a = f a >>= \b -> unless (p b) (loop b)
@@ -108,7 +100,7 @@ renderApp r t a = do
     mask = fromIntegral <$> C.mkRect (x * 48) 0 48 48
     s = C.mkRect 0 0 192 (192 :: Double)
     w = C.mkRect 0 0 640 480
-    pos = floor <$> centerWithin s w
+    pos = floor <$> C.centerWithin s w
 
 
 main :: IO ()

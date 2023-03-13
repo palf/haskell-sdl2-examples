@@ -80,3 +80,12 @@ mkRect x y w h = SDL.Rectangle o z
   where
     o = SDL.P (SDL.V2 x y)
     z = SDL.V2 w h
+
+
+centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a
+centerWithin (SDL.Rectangle _ iz) (SDL.Rectangle (SDL.P op) oz)
+  = SDL.Rectangle p iz
+
+  where
+    p = SDL.P $ op + (oz - iz) / 2
+

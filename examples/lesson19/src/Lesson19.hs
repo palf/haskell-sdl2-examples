@@ -91,14 +91,6 @@ runUpdate g w = do
 
 -- Rendering
 
-centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a
-centerWithin (SDL.Rectangle _ iz) (SDL.Rectangle (SDL.P op) oz)
-  = SDL.Rectangle p iz
-
-  where
-    p = SDL.P $ op + (oz - iz) / 2
-
-
 drawWorld :: (MonadIO m) => SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> m ()
 drawWorld r (t, ti) w
   = SDL.copyEx r t (Just mask) (Just pos) deg Nothing flips
@@ -114,7 +106,7 @@ drawWorld r (t, ti) w
     box = C.mkRect 0 0 tw th
 
     mask = floor <$> s
-    pos = floor <$> centerWithin box s
+    pos = floor <$> C.centerWithin box s
 
     deg = CDouble $ angle w
     flips = SDL.V2 False False
