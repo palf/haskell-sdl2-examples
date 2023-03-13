@@ -13,5 +13,7 @@ executable lesson08
   build-depends:       base
                      , common
                      , extra
+                     , mtl
                      , sdl2
+                     , transformers
   default-language:    Haskell2010
