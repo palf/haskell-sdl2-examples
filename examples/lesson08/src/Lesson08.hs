@@ -22,12 +22,14 @@ main = C.withSDL $ do
 
       setColor r White
 
-      whileM $
-        C.isContinue <$> SDL.pollEvent
-        >>= C.conditionallyRun (draw r)
+      whileM $ do
+        ev <- SDL.pollEvents
+        if C.hasQuitEvent ev
+          then pure False
+          else draw r >> pure True
 
 
-draw :: SDL.Renderer -> IO ()
+draw :: (MonadIO m) => SDL.Renderer -> m ()
 draw r = do
   clearScreen r
   withColor Red    >> fillRectangle' innerRect

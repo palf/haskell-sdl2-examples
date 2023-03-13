@@ -20,9 +20,11 @@ main = C.withSDL $ C.withWindow "Lesson 06" (640, 480) $
     image <- SDL.Image.load "./assets/loaded.png"
     surface <- SDL.convertSurface image pixelFormat
 
-    whileM $
-      C.isContinue <$> SDL.pollEvent
-      >>= C.conditionallyRun (draw w screen surface)
+    whileM $ do
+      ev <- SDL.pollEvents
+      if C.hasQuitEvent ev
+        then pure False
+        else draw w screen surface >> pure True
 
     SDL.freeSurface image
     SDL.freeSurface surface

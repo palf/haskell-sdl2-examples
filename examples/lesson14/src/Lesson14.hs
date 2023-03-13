@@ -8,24 +8,20 @@ module Main (main) where
 import qualified Common                 as C
 import qualified SDL
 import qualified SDL.Image
+import qualified SDL.Raw.Timer          as Raw
 
 import           Control.Monad          (unless)
-import           Control.Monad.IO.Class (MonadIO)
+import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Data.Foldable          (foldl')
 
 
 data World = World
   { exiting :: Bool
   , frame   :: Int
-  }
+  } deriving (Show)
 
 
 data Intent = Idle | Quit
-
-
--- modify this to match your monitor refresh rate
-frameRate :: Int
-frameRate = 200
 
 
 initialApp :: World
@@ -55,10 +51,12 @@ repeatUntil f p = go
   where go a = f a >>= \b -> unless (p b) (go b)
 
 
-appLoop :: (MonadIO m) => (World -> m ())-> World -> m World
-appLoop r a
-  = updateApp a <$> pollIntents
-  >>= \a' -> a' <$ r a'
+appLoop :: (MonadIO m) => (World -> m ()) -> World -> m World
+appLoop r w = measureFPS $ do
+  xs <- pollIntents
+  let w' = updateApp w xs
+  r w'
+  pure w'
 
 
 updateApp :: World -> [Intent] -> World
@@ -83,6 +81,18 @@ stepFrame :: World -> World
 stepFrame a = a { frame = frame a + 1 }
 
 
+measureFPS :: (MonadIO m) => m a -> m a
+measureFPS op = do
+    start <- Raw.getPerformanceCounter
+    x <- op
+    end <- Raw.getPerformanceCounter
+
+    freq <- Raw.getPerformanceFrequency
+    let elapsed = (fromIntegral (end - start) / fromIntegral freq) :: Double
+    liftIO $ print (1 / elapsed)
+    pure x
+
+
 renderApp :: (MonadIO m) => SDL.Renderer -> SDL.Texture -> World -> m ()
 renderApp r t a = do
   SDL.clear r
@@ -90,10 +100,14 @@ renderApp r t a = do
   SDL.present r
 
   where
-    animDurationSeconds = 3
-    x = (frame a `div` (animDurationSeconds * frameRate)) `mod` 8
-    mask = fromIntegral <$> C.mkRect (x * 48) 0 48 48
+    animDurationSeconds = 1
+    animFrames = 8
+    framesPerSecond = 60
 
+    x' = (animFrames * frame a) `div` (animDurationSeconds * framesPerSecond)
+    x = x' `mod` animFrames
+
+    mask = fromIntegral <$> C.mkRect (x * 48) 0 48 48
     s = C.mkRect 0 0 192 (192 :: Double)
     w = C.mkRect 0 0 640 480
     pos = floor <$> centerWithin s w

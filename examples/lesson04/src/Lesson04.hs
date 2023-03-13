@@ -14,6 +14,7 @@ data Intent
   = SelectSurface Direction
   | Idle
   | Quit
+  deriving (Show, Eq)
 
 
 data Direction
@@ -22,6 +23,7 @@ data Direction
   | Down
   | Left
   | Right
+  deriving (Show, Eq)
 
 
 data SurfaceMap a = SurfaceMap
@@ -53,20 +55,17 @@ main = C.withSDL $ C.withWindow "Lesson 04" (640, 480) $
     let doRender = C.renderSurfaceToWindow w screen
     doRender (help surfaces)
 
-    whileM $
-      mkIntent <$> SDL.pollEvent
-      >>= runIntent surfaces doRender
+    whileM $ do
+      xs <- mkIntent <$> SDL.pollEvents
+      _ <- applyIntent surfaces doRender `mapM` xs
+      pure $ notElem Quit xs
 
     mapM_ SDL.freeSurface surfaces
     SDL.freeSurface screen
 
 
-mkIntent :: Maybe SDL.Event -> Intent
-mkIntent = maybe Idle (payloadToIntent . extractPayload)
-
-
-extractPayload :: SDL.Event -> SDL.EventPayload
-extractPayload (SDL.Event _t p) = p
+mkIntent :: [SDL.Event] -> [ Intent ]
+mkIntent = fmap (payloadToIntent . SDL.eventPayload)
 
 
 payloadToIntent :: SDL.EventPayload -> Intent
@@ -88,15 +87,15 @@ getKey (SDL.KeyboardEventData _ SDL.Pressed False keysym) =
     _                 -> SelectSurface Help
 
 
-runIntent :: (Monad m) => SurfaceMap a -> (a -> m ()) -> Intent -> m Bool
-runIntent _ _ Quit
-  = pure False
+applyIntent :: (Monad m) => SurfaceMap a -> (a -> m ()) -> Intent -> m ()
+applyIntent _ _ Quit
+  = pure ()
 
-runIntent _ _ Idle
-  = pure True
+applyIntent _ _ Idle
+  = pure ()
 
-runIntent cs f (SelectSurface key)
-  = True <$ f (selectSurface key cs)
+applyIntent cs f (SelectSurface key)
+  = f (selectSurface key cs)
 
 
 selectSurface :: Direction -> SurfaceMap a -> a

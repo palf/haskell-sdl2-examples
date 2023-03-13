@@ -22,9 +22,11 @@ main = C.withSDL $ C.withSDLImage $ do
       t <- C.loadTextureWithInfo r "./assets/dots.png"
       let doRender = draw r t
 
-      whileM $
-        C.isContinue <$> SDL.pollEvent
-        >>= C.conditionallyRun doRender
+      whileM $ do
+        ev <- SDL.pollEvents
+        if C.hasQuitEvent ev
+          then pure False
+          else doRender >> pure True
 
       SDL.destroyTexture (fst t)
 

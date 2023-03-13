@@ -8,7 +8,6 @@ build-type:          Simple
 library
   hs-source-dirs:      lib
   exposed-modules:     Common
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:       base
                      , sdl2
                      , sdl2-image

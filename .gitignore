@@ -16,3 +16,4 @@ cabal.config
 *.ps
 .stack-work
 vendor
+tags

@@ -37,9 +37,11 @@ main = C.withSDL $ C.withSDLImage $ do
       ts <- loadTextures r assetPaths
       let doRender = draw r ts
 
-      whileM $
-        C.isContinue <$> SDL.pollEvent
-        >>= C.conditionallyRun doRender
+      whileM $ do
+        ev <- SDL.pollEvents
+        if C.hasQuitEvent ev
+          then pure False
+          else doRender >> pure True
 
       mapM_ (SDL.destroyTexture . fst) ts
 

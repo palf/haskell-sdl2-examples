@@ -4,11 +4,9 @@ module Main (main) where
 
 import qualified Common              as C
 import qualified SDL
-import qualified SDL.Image
 
 import Foreign.C.Types
 import Control.Monad.IO.Class
-import Data.Word
 import Data.Text hiding (foldl')
 import Data.Vector ((!?))
 import           Control.Monad.Loops (iterateUntilM)
@@ -83,6 +81,7 @@ runUpdate g w = do
   let es' = fmap (payloadToIntent . SDL.eventPayload) es
   s <- getControllerState g
   let s' = mkTarget s
+  liftIO $ print s
 
   pure $ updateWorld w (es' <> [ChangeAngle s'])
 

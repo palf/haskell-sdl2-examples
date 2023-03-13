@@ -1,21 +1,22 @@
-resolver: lts-13.10
+resolver:
+  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/13.yaml
 
 packages:
-  - ./common
-  - ./examples/lesson01
-  - ./examples/lesson02
-  - ./examples/lesson03
-  - ./examples/lesson04
-  - ./examples/lesson05
-  - ./examples/lesson06
-  - ./examples/lesson07
-  - ./examples/lesson08
-  - ./examples/lesson09
-  - ./examples/lesson10
-  - ./examples/lesson11
-  - ./examples/lesson12
-  - ./examples/lesson13
-  - ./examples/lesson14
-  - ./examples/lesson15
-  - ./examples/lesson17
-  - ./examples/lesson19
+  - common
+  - examples/lesson01
+  - examples/lesson02
+  - examples/lesson03
+  - examples/lesson04
+  - examples/lesson05
+  - examples/lesson06
+  - examples/lesson07
+  - examples/lesson08
+  - examples/lesson09
+  - examples/lesson10
+  - examples/lesson11
+  - examples/lesson12
+  - examples/lesson13
+  - examples/lesson14
+  - examples/lesson15
+  - examples/lesson17
+  - examples/lesson19

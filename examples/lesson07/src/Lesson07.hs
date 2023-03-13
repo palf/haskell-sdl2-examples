@@ -18,9 +18,11 @@ main = C.withSDL $ do
 
       t <- SDL.Image.loadTexture r "./assets/texture.png"
 
-      whileM $
-        C.isContinue <$> SDL.pollEvent
-        >>= C.conditionallyRun (draw r t)
+      whileM $ do
+        ev <- SDL.pollEvents
+        if C.hasQuitEvent ev
+          then pure False
+          else draw r t >> pure True
 
       SDL.destroyTexture t
 

@@ -10,21 +10,15 @@ import           Data.Text              (Text)
 import           SDL                    (($=))
 
 
+-- NOTE: can throw
 withSDL :: (MonadIO m) => m a -> m ()
 withSDL op = do
-  SDL.initialize
-    [ SDL.InitTimer
-    , SDL.InitAudio
-    , SDL.InitVideo
-    , SDL.InitJoystick
-    , SDL.InitHaptic
-    , SDL.InitGameController
-    , SDL.InitEvents
-    ]
-  op
+  SDL.initializeAll
+  _ <- op
   SDL.quit
 
 
+-- NOTE: probably not required
 withSDLImage :: (MonadIO m) => m a -> m ()
 withSDLImage op
   = SDL.Image.initialize [] >> void op >> SDL.Image.quit
@@ -62,18 +56,8 @@ renderSurfaceToWindow w s i
   >> SDL.updateWindowSurface w
 
 
-isContinue :: Maybe SDL.Event -> Bool
-isContinue = maybe True (not . isQuitEvent)
-
-
-conditionallyRun :: (Monad m) => m a -> Bool -> m Bool
-conditionallyRun f True  = True <$ f
-conditionallyRun _ False = pure False
-
-
-isQuitEvent :: SDL.Event -> Bool
-isQuitEvent (SDL.Event _t SDL.QuitEvent) = True
-isQuitEvent _                            = False
+hasQuitEvent :: [SDL.Event] -> Bool
+hasQuitEvent = elem SDL.QuitEvent . map SDL.eventPayload
 
 
 setHintQuality :: (MonadIO m) => m ()
