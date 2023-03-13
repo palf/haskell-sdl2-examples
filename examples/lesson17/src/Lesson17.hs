@@ -10,6 +10,15 @@ import           Control.Monad.Loops    (iterateUntilM)
 import           Data.Foldable          (foldl')
 
 
+-- Setup
+
+data Quadrant
+  = TopLeft
+  | TopRight
+  | BottomLeft
+  | BottomRight
+
+
 data Intent
   = Idle
   | Quit
@@ -19,10 +28,11 @@ data Intent
   | Leave Quadrant
 
 
-data World = World
-  { exiting :: Bool
-  , panes   :: PaneMap
-  }
+data Pane
+  = Out
+  | Over
+  | Down
+  | Up
 
 
 data PaneMap = PaneMap
@@ -33,24 +43,9 @@ data PaneMap = PaneMap
   }
 
 
-data Pane
-  = Out
-  | Over
-  | Down
-  | Up
-
-
-data Quadrant
-  = TopLeft
-  | TopRight
-  | BottomLeft
-  | BottomRight
-
-
-initialWorld :: World
-initialWorld = World
-  { exiting = False
-  , panes = initialPanes
+data World = World
+  { exiting :: Bool
+  , panes   :: PaneMap
   }
 
 
@@ -63,37 +58,22 @@ initialPanes = PaneMap
   }
 
 
-main :: IO ()
-main = C.withSDL $ C.withSDLImage $ do
-  C.setHintQuality
-  C.withWindow "Lesson 17" (640, 480) $ \w ->
-    C.withRenderer w $ \r -> do
-      t <- C.loadTextureWithInfo r "./assets/mouse_states.png"
-
-      let doRender = renderWorld r t
-
-      _ <- iterateUntilM
-        exiting
-        (\x ->
-          updateWorld x <$> SDL.pollEvents
-          >>= \x' -> x' <$ doRender x'
-        )
-        initialWorld
-
-      SDL.destroyTexture (fst t)
+initialWorld :: World
+initialWorld = World
+  { exiting = False
+  , panes = initialPanes
+  }
 
 
-updateWorld :: World -> [SDL.Event] -> World
-updateWorld w
-  = foldl' (flip applyIntent) w
-  . fmap (payloadToIntent . SDL.eventPayload)
+-- Actions
 
-
-payloadToIntent :: SDL.EventPayload -> Intent
-payloadToIntent SDL.QuitEvent            = Quit
-payloadToIntent (SDL.MouseMotionEvent e) = motionIntent e
-payloadToIntent (SDL.MouseButtonEvent e) = buttonIntent e
-payloadToIntent _                        = Idle
+selectQuadrant :: (Num a, Ord a) => a -> a -> Quadrant
+selectQuadrant x y
+  | x <  320 && y <  240 = TopLeft
+  | x >= 320 && y <  240 = TopRight
+  | x <  320 && y >= 240 = BottomLeft
+  | x >= 320 && y >= 240 = BottomRight
+  | otherwise            = undefined
 
 
 motionIntent :: SDL.MouseMotionEventData -> Intent
@@ -115,22 +95,31 @@ buttonIntent e = t q
            else Release
 
 
-selectQuadrant :: (Num a, Ord a) => a -> a -> Quadrant
-selectQuadrant x y
-  | x <  320 && y <  240 = TopLeft
-  | x >= 320 && y <  240 = TopRight
-  | x <  320 && y >= 240 = BottomLeft
-  | x >= 320 && y >= 240 = BottomRight
-  | otherwise            = undefined
+payloadToIntent :: SDL.EventPayload -> Intent
+payloadToIntent SDL.QuitEvent            = Quit
+payloadToIntent (SDL.MouseMotionEvent e) = motionIntent e
+payloadToIntent (SDL.MouseButtonEvent e) = buttonIntent e
+payloadToIntent _                        = Idle
 
 
-applyIntent :: Intent -> World -> World
-applyIntent (Press q)   = pressWorld q
-applyIntent (Release q) = releaseWorld q
-applyIntent (Hover q)   = hoverWorld q
-applyIntent (Leave q)   = leaveWorld q
-applyIntent Idle        = idleWorld
-applyIntent Quit        = quitWorld
+setOut :: Pane -> Pane
+setOut Down = Down
+setOut _    = Out
+
+
+setOver :: Pane -> Pane
+setOver Down = Down
+setOver Up   = Up
+setOver _    = Over
+
+
+setDown :: Pane -> Pane
+setDown _ = Down
+
+
+setUp :: Pane -> Pane
+setUp Down = Up
+setUp p    = p
 
 
 updatePaneMap :: (Pane -> Pane) -> (Pane -> Pane) -> Quadrant -> PaneMap -> PaneMap
@@ -160,39 +149,43 @@ leaveWorld q w = w { panes = panes' }
   where panes' = updatePaneMap setOut setOver q (panes w)
 
 
-setOut :: Pane -> Pane
-setOut Down = Down
-setOut _    = Out
-
-
-setOver :: Pane -> Pane
-setOver Down = Down
-setOver Up   = Up
-setOver _    = Over
-
-
-setDown :: Pane -> Pane
-setDown _ = Down
-
-
-setUp :: Pane -> Pane
-setUp Down = Up
-setUp p    = p
-
-
-idleWorld :: World -> World
-idleWorld = id
-
-
 quitWorld :: World -> World
 quitWorld w = w { exiting = True }
 
 
-renderWorld :: (MonadIO m) => SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> m ()
-renderWorld r t w = do
-  SDL.clear r
-  drawWorld r t w
-  SDL.present r
+applyIntent :: Intent -> World -> World
+applyIntent (Press q)   = pressWorld q
+applyIntent (Release q) = releaseWorld q
+applyIntent (Hover q)   = hoverWorld q
+applyIntent (Leave q)   = leaveWorld q
+applyIntent Idle        = id
+applyIntent Quit        = quitWorld
+
+
+updateWorld :: World -> [SDL.Event] -> World
+updateWorld w
+  = foldl' (flip applyIntent) w
+  . fmap (payloadToIntent . SDL.eventPayload)
+
+
+-- Rendering
+
+getMask :: (Num a) => Pane -> (a, a)
+getMask Out  = (  0,   0)
+getMask Over = (320,   0)
+getMask Down = (  0, 240)
+getMask Up   = (320, 240)
+
+
+getPosition :: (Num a) => Quadrant -> (a, a)
+getPosition TopLeft     = (  0,   0)
+getPosition TopRight    = (320,   0)
+getPosition BottomLeft  = (  0, 240)
+getPosition BottomRight = (320, 240)
+
+
+moveTo :: SDL.Rectangle a -> (a, a) -> SDL.Rectangle a
+moveTo (SDL.Rectangle _ d) (x, y) = SDL.Rectangle (C.mkPoint x y) d
 
 
 drawWorld :: (MonadIO m) => SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> m ()
@@ -218,19 +211,30 @@ drawWorld r (t, ti) w = do
             (Just $ floor <$> pFor q)
 
 
-getMask :: (Num a) => Pane -> (a, a)
-getMask Out  = (  0,   0)
-getMask Over = (320,   0)
-getMask Down = (  0, 240)
-getMask Up   = (320, 240)
+renderWorld :: (MonadIO m) => SDL.Renderer -> (SDL.Texture, SDL.TextureInfo) -> World -> m ()
+renderWorld r t w = do
+  SDL.clear r
+  drawWorld r t w
+  SDL.present r
 
 
-getPosition :: (Num a) => Quadrant -> (a, a)
-getPosition TopLeft     = (  0,   0)
-getPosition TopRight    = (320,   0)
-getPosition BottomLeft  = (  0, 240)
-getPosition BottomRight = (320, 240)
+-- Main
 
+main :: IO ()
+main = C.withSDL $ C.withSDLImage $ do
+  C.setHintQuality
+  C.withWindow "Lesson 17" (640, 480) $ \w ->
+    C.withRenderer w $ \r -> do
+      t <- C.loadTextureWithInfo r "./assets/mouse_states.png"
 
-moveTo :: SDL.Rectangle a -> (a, a) -> SDL.Rectangle a
-moveTo (SDL.Rectangle _ d) (x, y) = SDL.Rectangle (C.mkPoint x y) d
+      let doRender = renderWorld r t
+
+      _ <- iterateUntilM
+        exiting
+        (\x ->
+          updateWorld x <$> SDL.pollEvents
+          >>= \x' -> x' <$ doRender x'
+        )
+        initialWorld
+
+      SDL.destroyTexture (fst t)

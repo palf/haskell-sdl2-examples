@@ -29,37 +29,8 @@ assetPaths = AssetMap
   }
 
 
-main :: IO ()
-main = C.withSDL $ C.withSDLImage $ do
-  C.setHintQuality
-  C.withWindow "Lesson 10" (640, 480) $ \w ->
-    C.withRenderer w $ \r -> do
-
-      ts <- loadTextures r assetPaths
-      let doRender = draw r ts
-
-      whileM $ do
-        ev <- SDL.pollEvents
-        if C.hasQuitEvent ev
-          then pure False
-          else doRender >> pure True
-
-      mapM_ (SDL.destroyTexture . fst) ts
-
-
 loadTextures :: (MonadIO m) => SDL.Renderer -> PathMap -> m TextureMap
 loadTextures r = mapM (C.loadTextureWithInfo r)
-
-
-draw :: (MonadIO m) => SDL.Renderer -> TextureMap -> m ()
-draw r ts = do
-  SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound maxBound maxBound
-  SDL.clear r
-
-  renderTexture r (background ts) (0, 0 :: Double)
-  renderTexture r (foreground ts) (240, 190 :: Double)
-
-  SDL.present r
 
 
 renderTexture
@@ -77,3 +48,28 @@ renderTexture r (t, ti) (x, y)
     y' = floor y
     a = SDL.textureWidth ti
     b = SDL.textureHeight ti
+
+
+draw :: (MonadIO m) => SDL.Renderer -> TextureMap -> m ()
+draw r ts = do
+  SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound maxBound maxBound
+  SDL.clear r
+
+  renderTexture r (background ts) (0, 0 :: Double)
+  renderTexture r (foreground ts) (240, 190 :: Double)
+
+  SDL.present r
+
+
+main :: IO ()
+main = C.withSDL $ C.withSDLImage $ do
+  C.setHintQuality
+  C.withWindow "Lesson 10" (640, 480) $ \w ->
+    C.withRenderer w $ \r -> do
+
+      ts <- loadTextures r assetPaths
+      draw r ts
+
+      whileM $ not . C.hasQuitEvent <$> SDL.pollEvents
+
+      mapM_ (SDL.destroyTexture . fst) ts

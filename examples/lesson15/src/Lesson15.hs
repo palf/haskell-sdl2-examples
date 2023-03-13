@@ -43,40 +43,6 @@ initialWorld = World
   }
 
 
-main :: IO ()
-main = C.withSDL $ C.withSDLImage $ do
-  C.setHintQuality
-  C.withWindow "Lesson 15" (640, 480) $ \w ->
-    C.withRenderer w $ \r -> do
-
-      tx <- C.loadTextureWithInfo r "./assets/arrow.png"
-
-      let doRender = renderWorld r tx
-
-      _ <- iterateUntilM
-        exiting
-        (\x ->
-          updateWorld x <$> SDL.pollEvents
-          >>= \x' -> x' <$ doRender x'
-        )
-        initialWorld
-
-      SDL.destroyTexture (fst tx)
-
-
-
-updateWorld :: World -> [SDL.Event] -> World
-updateWorld w
-  = foldl' (flip applyIntent) w
-  . fmap (payloadToIntent . SDL.eventPayload)
-
-
-payloadToIntent :: SDL.EventPayload -> Intent
-payloadToIntent SDL.QuitEvent         = Quit
-payloadToIntent (SDL.KeyboardEvent k) = keyEventToIntent k
-payloadToIntent _                     = Idle
-
-
 keyEventToIntent :: SDL.KeyboardEventData -> Intent
 keyEventToIntent (SDL.KeyboardEventData _ SDL.Pressed _ keysym) =
   case SDL.keysymKeycode keysym of
@@ -95,12 +61,10 @@ keyEventToIntent (SDL.KeyboardEventData _ SDL.Pressed _ keysym) =
 keyEventToIntent _ = Idle
 
 
-applyIntent :: Intent -> World -> World
-applyIntent (Flip d)   = flipWorld d
-applyIntent (Rotate d) = rotateWorld d
-applyIntent Reset      = resetWorld
-applyIntent Idle       = id
-applyIntent Quit       = quitWorld
+payloadToIntent :: SDL.EventPayload -> Intent
+payloadToIntent SDL.QuitEvent         = Quit
+payloadToIntent (SDL.KeyboardEvent k) = keyEventToIntent k
+payloadToIntent _                     = Idle
 
 
 flipWorld :: FlipDirection -> World -> World
@@ -124,6 +88,28 @@ resetWorld _ = initialWorld
 
 quitWorld :: World -> World
 quitWorld w = w { exiting = True }
+
+
+applyIntent :: Intent -> World -> World
+applyIntent (Flip d)   = flipWorld d
+applyIntent (Rotate d) = rotateWorld d
+applyIntent Reset      = resetWorld
+applyIntent Idle       = id
+applyIntent Quit       = quitWorld
+
+
+updateWorld :: World -> [SDL.Event] -> World
+updateWorld w
+  = foldl' (flip applyIntent) w
+  . fmap (payloadToIntent . SDL.eventPayload)
+
+
+centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a
+centerWithin (SDL.Rectangle _ iz) (SDL.Rectangle (SDL.P op) oz)
+  = SDL.Rectangle p iz
+
+  where
+    p = SDL.P $ op + (oz - iz) / 2
 
 
 renderWorld
@@ -155,9 +141,24 @@ renderWorld r (t, ti) w = do
     flips = uncurry SDL.V2 (flipped w)
 
 
-centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a
-centerWithin (SDL.Rectangle _ iz) (SDL.Rectangle (SDL.P op) oz)
-  = SDL.Rectangle p iz
+main :: IO ()
+main = C.withSDL $ C.withSDLImage $ do
+  C.setHintQuality
+  C.withWindow "Lesson 15" (640, 480) $ \w ->
+    C.withRenderer w $ \r -> do
 
-  where
-    p = SDL.P $ op + (oz - iz) / 2
+      tx <- C.loadTextureWithInfo r "./assets/arrow.png"
+
+      let doRender = renderWorld r tx
+
+      _ <- iterateUntilM
+        exiting
+        (\x ->
+          updateWorld x <$> SDL.pollEvents
+          >>= \x' -> x' <$ doRender x'
+        )
+        initialWorld
+
+      SDL.destroyTexture (fst tx)
+
+

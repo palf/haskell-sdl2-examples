@@ -9,9 +9,9 @@ build-type:          Simple
 executable lesson12
   hs-source-dirs:      src
   main-is:             Lesson12.hs
-  other-modules:       Lesson12.Types
-                     , Lesson12.Transitions
+  other-modules:       Lesson12.Intents
                      , Lesson12.Rendering
+                     , Lesson12.World
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:       base
                      , common

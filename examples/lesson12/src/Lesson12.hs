@@ -2,70 +2,26 @@
 
 module Main (main) where
 
-import qualified Lesson12.Rendering   as R
-import qualified Lesson12.Transitions as T
-import           Lesson12.Types
-
-import qualified Common               as C
+import qualified Common              as C
+import qualified Lesson12.Rendering  as R
+import qualified Lesson12.World      as W
 import qualified SDL
 import qualified SDL.Image
 
-import           Control.Monad.Loops  (iterateUntilM)
-import           Data.Foldable        (foldl')
-
-
-initialWorld :: World
-initialWorld = World
-  { colors = ColorValues
-    { redV   = 128
-    , greenV = 128
-    , blueV  = 128
-    }
-  , toggles = ColorToggles
-    { redT   = False
-    , greenT = False
-    , blueT  = False
-    }
-  , exiting = False
-  }
-
-
-main :: IO ()
-main = C.withSDL $ C.withSDLImage $ do
-  C.setHintQuality
-  C.withWindow "Lesson 12" (640, 480) $ \w ->
-    C.withRenderer w $ \r -> do
-      t <- SDL.Image.loadTexture r "./assets/colors.png"
-
-      let doRender = R.renderWorld r t
-
-      _ <- iterateUntilM
-        exiting
-        (\x ->
-          updateWorld x <$> SDL.pollEvents
-          >>= \x' -> x' <$ doRender x'
-        )
-        initialWorld
-
-      SDL.destroyTexture t
-
-
-
-updateWorld :: World -> [SDL.Event] -> World
-updateWorld w
-  = T.stepWorld
-  . foldl' (flip runIntent) w
-  . mkIntent
-
-
-mkIntent :: [SDL.Event] -> [Intent]
-mkIntent = fmap (payloadToIntent . SDL.eventPayload)
+import           Control.Monad.Loops (iterateUntilM)
+import           Lesson12.Intents
 
 
 payloadToIntent :: SDL.EventPayload -> Intent
 payloadToIntent SDL.QuitEvent         = Quit
 payloadToIntent (SDL.KeyboardEvent k) = getKey k
 payloadToIntent _                     = Idle
+
+
+updateWorld :: W.World -> [SDL.Event] -> W.World
+updateWorld w
+  = W.updateWorld w
+  . fmap (payloadToIntent . SDL.eventPayload)
 
 
 getKey :: SDL.KeyboardEventData -> Intent
@@ -86,9 +42,22 @@ getKey (SDL.KeyboardEventData _ SDL.Pressed False keysym) =
     _                 -> Idle
 
 
-runIntent :: Intent -> World -> World
-runIntent (Increase color) = T.increase color
-runIntent (Decrease color) = T.decrease color
-runIntent (Toggle color)   = T.toggle color
-runIntent Idle             = id
-runIntent Quit             = T.exit
+
+main :: IO ()
+main = C.withSDL $ C.withSDLImage $ do
+  C.setHintQuality
+  C.withWindow "Lesson 12" (640, 480) $ \w ->
+    C.withRenderer w $ \r -> do
+      t <- SDL.Image.loadTexture r "./assets/colors.png"
+
+      let doRender = R.renderWorld r t
+
+      _ <- iterateUntilM
+        W.exiting
+        (\x ->
+          updateWorld x <$> SDL.pollEvents
+          >>= \x' -> x' <$ doRender x'
+        )
+        W.initialWorld
+
+      SDL.destroyTexture t

@@ -26,14 +26,15 @@ data Intent
   | Idle
   | Quit
 
-data TextureMap a = TextureMap
+
+data AssetMap a = AssetMap
   { background :: a
   , foreground :: a
   } deriving (Foldable, Traversable, Functor)
 
 
-assetPaths :: TextureMap FilePath
-assetPaths = TextureMap
+assetPaths :: AssetMap FilePath
+assetPaths = AssetMap
   { background = "./assets/fadein.png"
   , foreground = "./assets/fadeout.png"
   }
@@ -44,30 +45,6 @@ initialWorld = World
   { exiting = False
   , alpha = 0
   }
-
-
-main :: IO ()
-main = C.withSDL $ C.withSDLImage $ do
-  C.setHintQuality
-  C.withWindow "Lesson 13" (640, 480) $ \w ->
-    C.withRenderer w $ \r -> do
-      SDL.rendererDrawBlendMode r $= SDL.BlendAlphaBlend
-
-      ts <- mapM (SDL.Image.loadTexture r) assetPaths
-      mapM_ (\t -> SDL.textureBlendMode t $= SDL.BlendAlphaBlend) ts
-
-      let doRender = renderWorld r ts
-
-      _ <- iterateUntilM
-        exiting
-        (\x ->
-          updateWorld . foldl' (flip runIntent) x . mkIntent <$> SDL.pollEvents
-          >>= \x' -> x' <$ doRender x'
-        )
-        initialWorld
-
-      mapM_ SDL.destroyTexture ts
-
 
 mkIntent :: [SDL.Event] -> [Intent]
 mkIntent = fmap (payloadToIntent . extractPayload)
@@ -93,13 +70,6 @@ keyEventToIntent (SDL.KeyboardEventData _ SDL.Pressed _ keysym) =
     _                 -> Idle
 
 
-runIntent :: Intent -> World -> World
-runIntent Increase = increase
-runIntent Decrease = decrease
-runIntent Idle     = id
-runIntent Quit     = quit
-
-
 increase :: World -> World
 increase w = w { alpha = alpha w + 8 }
 
@@ -112,11 +82,14 @@ quit :: World -> World
 quit w = w { exiting = True }
 
 
-updateWorld :: World -> World
-updateWorld = id
+runIntent :: Intent -> World -> World
+runIntent Increase = increase
+runIntent Decrease = decrease
+runIntent Idle     = id
+runIntent Quit     = quit
 
 
-renderWorld :: (MonadIO m) => SDL.Renderer -> TextureMap SDL.Texture -> World -> m ()
+renderWorld :: (MonadIO m) => SDL.Renderer -> AssetMap SDL.Texture -> World -> m ()
 renderWorld r ts w = do
   let fg = foreground ts
   let bg = background ts
@@ -127,3 +100,26 @@ renderWorld r ts w = do
   SDL.copy r bg Nothing Nothing
   SDL.copy r fg Nothing Nothing
   SDL.present r
+
+
+main :: IO ()
+main = C.withSDL $ C.withSDLImage $ do
+  C.setHintQuality
+  C.withWindow "Lesson 13" (640, 480) $ \w ->
+    C.withRenderer w $ \r -> do
+      SDL.rendererDrawBlendMode r $= SDL.BlendAlphaBlend
+
+      ts <- mapM (SDL.Image.loadTexture r) assetPaths
+      mapM_ (\t -> SDL.textureBlendMode t $= SDL.BlendAlphaBlend) ts
+
+      let doRender = renderWorld r ts
+
+      _ <- iterateUntilM
+        exiting
+        (\x ->
+          foldl' (flip runIntent) x . mkIntent <$> SDL.pollEvents
+          >>= \x' -> x' <$ doRender x'
+        )
+        initialWorld
+
+      mapM_ SDL.destroyTexture ts

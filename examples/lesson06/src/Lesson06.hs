@@ -10,6 +10,12 @@ import           Control.Monad.Extra    (whileM)
 import           Control.Monad.IO.Class (MonadIO)
 
 
+draw :: (MonadIO m) => SDL.Window -> SDL.Surface -> SDL.Surface -> m ()
+draw w s t
+  = SDL.surfaceBlitScaled t Nothing s Nothing
+  >> SDL.updateWindowSurface w
+
+
 main :: IO ()
 main = C.withSDL $ C.withWindow "Lesson 06" (640, 480) $
   \w -> do
@@ -20,19 +26,9 @@ main = C.withSDL $ C.withWindow "Lesson 06" (640, 480) $
     image <- SDL.Image.load "./assets/loaded.png"
     surface <- SDL.convertSurface image pixelFormat
 
-    whileM $ do
-      ev <- SDL.pollEvents
-      if C.hasQuitEvent ev
-        then pure False
-        else draw w screen surface >> pure True
+    draw w screen surface
+    whileM $ not . C.hasQuitEvent <$> SDL.pollEvents
 
     SDL.freeSurface image
     SDL.freeSurface surface
     SDL.freeSurface screen
-
-
-draw :: (MonadIO m) => SDL.Window -> SDL.Surface -> SDL.Surface -> m ()
-draw w s t
-  = SDL.surfaceBlitScaled t Nothing s Nothing
-  >> SDL.updateWindowSurface w
-

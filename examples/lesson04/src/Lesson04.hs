@@ -1,20 +1,16 @@
 {-# LANGUAGE DeriveFoldable    #-}
+
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main (main) where
 
-import qualified Common              as C
+import qualified Common                 as C
 import qualified SDL
 
-import           Control.Monad.Extra (whileM)
-import           Prelude             hiding (Left, Right)
-
-data Intent
-  = SelectSurface Direction
-  | Idle
-  | Quit
-  deriving (Show, Eq)
+import           Control.Monad.Extra    (whileM)
+import           Control.Monad.IO.Class (MonadIO)
+import           Prelude                hiding (Left, Right)
 
 
 data Direction
@@ -26,7 +22,14 @@ data Direction
   deriving (Show, Eq)
 
 
-data SurfaceMap a = SurfaceMap
+data Intent
+  = SelectSurface Direction
+  | Idle
+  | Quit
+  deriving (Show, Eq)
+
+
+data AssetMap a = AssetMap
   { help  :: a
   , up    :: a
   , down  :: a
@@ -35,43 +38,17 @@ data SurfaceMap a = SurfaceMap
   } deriving (Foldable, Traversable, Functor)
 
 
-surfacePaths :: SurfaceMap FilePath
-surfacePaths = SurfaceMap
+type RenderFunction m a = (a -> m ())
+
+
+surfacePaths :: AssetMap FilePath
+surfacePaths = AssetMap
   { help  = "./assets/press.bmp"
   , up    = "./assets/up.bmp"
   , down  = "./assets/down.bmp"
   , left  = "./assets/left.bmp"
   , right = "./assets/right.bmp"
   }
-
-
-main :: IO ()
-main = C.withSDL $ C.withWindow "Lesson 04" (640, 480) $
-  \w -> do
-
-    screen <- SDL.getWindowSurface w
-    surfaces <- mapM SDL.loadBMP surfacePaths
-
-    let doRender = C.renderSurfaceToWindow w screen
-    doRender (help surfaces)
-
-    whileM $ do
-      xs <- mkIntent <$> SDL.pollEvents
-      _ <- applyIntent surfaces doRender `mapM` xs
-      pure $ notElem Quit xs
-
-    mapM_ SDL.freeSurface surfaces
-    SDL.freeSurface screen
-
-
-mkIntent :: [SDL.Event] -> [ Intent ]
-mkIntent = fmap (payloadToIntent . SDL.eventPayload)
-
-
-payloadToIntent :: SDL.EventPayload -> Intent
-payloadToIntent SDL.QuitEvent         = Quit
-payloadToIntent (SDL.KeyboardEvent k) = getKey k
-payloadToIntent _                     = Idle
 
 
 getKey :: SDL.KeyboardEventData -> Intent
@@ -87,20 +64,54 @@ getKey (SDL.KeyboardEventData _ SDL.Pressed False keysym) =
     _                 -> SelectSurface Help
 
 
-applyIntent :: (Monad m) => SurfaceMap a -> (a -> m ()) -> Intent -> m ()
-applyIntent _ _ Quit
-  = pure ()
-
-applyIntent _ _ Idle
-  = pure ()
-
-applyIntent cs f (SelectSurface key)
-  = f (selectSurface key cs)
+payloadToIntent :: SDL.EventPayload -> Intent
+payloadToIntent SDL.QuitEvent         = Quit
+payloadToIntent (SDL.KeyboardEvent k) = getKey k
+payloadToIntent _                     = Idle
 
 
-selectSurface :: Direction -> SurfaceMap a -> a
+selectSurface :: Direction -> AssetMap a -> a
 selectSurface Help  = help
 selectSurface Up    = up
 selectSurface Down  = down
 selectSurface Left  = left
 selectSurface Right = right
+
+
+applyIntent :: (Monad m) => AssetMap a -> RenderFunction m a -> Intent -> m ()
+applyIntent _ _ Quit = pure ()
+applyIntent _ _ Idle = pure ()
+applyIntent cs f (SelectSurface key)
+  = f (selectSurface key cs)
+
+
+mapEventsToIntents :: [SDL.Event] -> [ Intent ]
+mapEventsToIntents = fmap (payloadToIntent . SDL.eventPayload)
+
+
+appLoop :: (MonadIO m) => AssetMap a -> RenderFunction m a -> m Bool
+appLoop assets doRender = do
+  xs <- mapEventsToIntents <$> SDL.pollEvents
+
+  let shouldQuit = Quit `elem` xs
+  if shouldQuit
+      then pure False
+      else do
+        applyIntent assets doRender `mapM_` xs
+        pure True
+
+
+main :: IO ()
+main = C.withSDL $ C.withWindow "Lesson 04" (640, 480) $
+  \w -> do
+
+    screen <- SDL.getWindowSurface w
+    assets <- mapM SDL.loadBMP surfacePaths
+
+    let doRender = C.renderSurfaceToWindow w screen
+
+    doRender (help assets)
+    whileM $ appLoop assets doRender
+
+    mapM_ SDL.freeSurface assets
+    SDL.freeSurface screen

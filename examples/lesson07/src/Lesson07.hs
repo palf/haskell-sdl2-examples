@@ -10,6 +10,13 @@ import           Control.Monad.Extra    (whileM)
 import           Control.Monad.IO.Class (MonadIO)
 
 
+draw :: (MonadIO m) => SDL.Renderer -> SDL.Texture -> m ()
+draw r t = do
+  SDL.clear r
+  SDL.copy r t Nothing Nothing
+  SDL.present r
+
+
 main :: IO ()
 main = C.withSDL $ do
   C.setHintQuality
@@ -18,17 +25,7 @@ main = C.withSDL $ do
 
       t <- SDL.Image.loadTexture r "./assets/texture.png"
 
-      whileM $ do
-        ev <- SDL.pollEvents
-        if C.hasQuitEvent ev
-          then pure False
-          else draw r t >> pure True
+      draw r t
+      whileM $ not . C.hasQuitEvent <$> SDL.pollEvents
 
       SDL.destroyTexture t
-
-
-draw :: (MonadIO m) => SDL.Renderer -> SDL.Texture -> m ()
-draw r t = do
-  SDL.clear r
-  SDL.copy r t Nothing Nothing
-  SDL.present r

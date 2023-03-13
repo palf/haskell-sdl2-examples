@@ -31,45 +31,43 @@ initialApp = World
   }
 
 
-main :: IO ()
-main = C.withSDL $ C.withSDLImage $ do
-  C.setHintQuality
-  C.withWindow "Lesson 14" (640, 480) $ \w ->
-    C.withRenderer w $ \r -> do
-      t <- SDL.Image.loadTexture r "./assets/walk.png"
-      let doRender = renderApp r t
-      runApp (appLoop doRender) initialApp
-      SDL.destroyTexture t
+centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a
+centerWithin (SDL.Rectangle _ iz) (SDL.Rectangle (SDL.P op) oz)
+  = SDL.Rectangle p iz
+
+  where
+    p = SDL.P $ op + (oz - iz) / 2
+
+
+repeatUntil :: (Monad m) => (a -> m a) -> (a -> Bool) -> a -> m ()
+repeatUntil f p = loop
+  where loop a = f a >>= \b -> unless (p b) (loop b)
 
 
 runApp :: (Monad m) => (World -> m World) -> World -> m ()
 runApp f = repeatUntil f exiting
 
 
-repeatUntil :: (Monad m) => (a -> m a) -> (a -> Bool) -> a -> m ()
-repeatUntil f p = go
-  where go a = f a >>= \b -> unless (p b) (go b)
+-- TODO: this should be in common
+measureFPS :: (MonadIO m) => m a -> m a
+measureFPS op = do
+    start <- Raw.getPerformanceCounter
+    x <- op
+    end <- Raw.getPerformanceCounter
 
-
-appLoop :: (MonadIO m) => (World -> m ()) -> World -> m World
-appLoop r w = measureFPS $ do
-  xs <- pollIntents
-  let w' = updateApp w xs
-  r w'
-  pure w'
-
-
-updateApp :: World -> [Intent] -> World
-updateApp a = stepFrame . foldl' applyIntent a
-
-
-pollIntents :: (MonadIO m) => m [Intent]
-pollIntents = (fmap . fmap) eventToIntent SDL.pollEvents
+    freq <- Raw.getPerformanceFrequency
+    let elapsed = (fromIntegral (end - start) / fromIntegral freq) :: Double
+    liftIO $ print (1 / elapsed)
+    pure x
 
 
 eventToIntent :: SDL.Event -> Intent
 eventToIntent (SDL.Event _t SDL.QuitEvent) = Quit
 eventToIntent _                            = Idle
+
+
+pollIntents :: (MonadIO m) => m [Intent]
+pollIntents = (fmap . fmap) eventToIntent SDL.pollEvents
 
 
 applyIntent :: World -> Intent -> World
@@ -81,16 +79,16 @@ stepFrame :: World -> World
 stepFrame a = a { frame = frame a + 1 }
 
 
-measureFPS :: (MonadIO m) => m a -> m a
-measureFPS op = do
-    start <- Raw.getPerformanceCounter
-    x <- op
-    end <- Raw.getPerformanceCounter
+updateApp :: World -> [Intent] -> World
+updateApp a = stepFrame . foldl' applyIntent a
 
-    freq <- Raw.getPerformanceFrequency
-    let elapsed = (fromIntegral (end - start) / fromIntegral freq) :: Double
-    liftIO $ print (1 / elapsed)
-    pure x
+
+appLoop :: (MonadIO m) => (World -> m ()) -> World -> m World
+appLoop r w = measureFPS $ do
+  xs <- pollIntents
+  let w' = updateApp w xs
+  r w'
+  pure w'
 
 
 renderApp :: (MonadIO m) => SDL.Renderer -> SDL.Texture -> World -> m ()
@@ -113,9 +111,12 @@ renderApp r t a = do
     pos = floor <$> centerWithin s w
 
 
-centerWithin :: (Fractional a) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle a
-centerWithin (SDL.Rectangle _ iz) (SDL.Rectangle (SDL.P op) oz)
-  = SDL.Rectangle p iz
-
-  where
-    p = SDL.P $ op + (oz - iz) / 2
+main :: IO ()
+main = C.withSDL $ C.withSDLImage $ do
+  C.setHintQuality
+  C.withWindow "Lesson 14" (640, 480) $ \w ->
+    C.withRenderer w $ \r -> do
+      t <- SDL.Image.loadTexture r "./assets/walk.png"
+      let doRender = renderApp r t
+      runApp (appLoop doRender) initialApp
+      SDL.destroyTexture t
