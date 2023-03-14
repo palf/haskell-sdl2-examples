@@ -45,14 +45,7 @@ draw r (t, SDL.V2 tw th) = do
   where
     s = C.mkRect 0 0 (fromIntegral tw :: Double) (fromIntegral th)
     w = C.mkRect 0 0 640 480
-    pos = centerWithin s w
-
-
-centerWithin :: (Num a, Fractional a, RealFrac a, Integral b) => SDL.Rectangle a -> SDL.Rectangle a -> SDL.Rectangle b
-centerWithin (SDL.Rectangle _ iz) (SDL.Rectangle (SDL.P op) oz)
-  = round <$> SDL.Rectangle p iz
-  where
-    p = SDL.P $ op + (oz - iz) / 2
+    pos = round <$> C.centerWithin s w
 
 
 main :: IO ()

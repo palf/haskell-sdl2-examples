@@ -127,7 +127,7 @@ renderWorld r (t, ti) w = do
     box = C.mkRect 0 0 tw th
 
     mask = floor <$> s
-    pos = floor <$> C.centerWithin box s
+    pos = round <$> C.centerWithin box s
 
     deg = fromIntegral $ degrees w
     flips = uncurry SDL.V2 (flipped w)
