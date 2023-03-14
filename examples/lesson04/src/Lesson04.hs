@@ -10,6 +10,7 @@ import qualified SDL
 
 import           Control.Monad.Extra    (whileM)
 import           Control.Monad.IO.Class (MonadIO)
+import           Data.Maybe
 import           Prelude                hiding (Left, Right)
 
 
@@ -23,8 +24,7 @@ data Direction
 
 
 data Intent
-  = SelectSurface Direction
-  | Idle
+  = Render Direction
   | Quit
   deriving (Show, Eq)
 
@@ -38,7 +38,7 @@ data AssetMap a = AssetMap
   } deriving (Foldable, Traversable, Functor)
 
 
-type RenderFunction m a = (a -> m ())
+type RenderFunction m = (Direction -> m ())
 
 
 surfacePaths :: AssetMap FilePath
@@ -51,54 +51,56 @@ surfacePaths = AssetMap
   }
 
 
-getKey :: SDL.KeyboardEventData -> Intent
-getKey (SDL.KeyboardEventData _ SDL.Released _ _) = Idle
-getKey (SDL.KeyboardEventData _ SDL.Pressed True _) = Idle
-getKey (SDL.KeyboardEventData _ SDL.Pressed False keysym) =
+getKey :: SDL.KeyboardEventData -> Maybe Intent
+getKey (SDL.KeyboardEventData _ SDL.Released _ _) = Nothing
+getKey (SDL.KeyboardEventData _ SDL.Pressed True _) = Nothing
+getKey (SDL.KeyboardEventData _ SDL.Pressed False keysym) = Just $
   case SDL.keysymKeycode keysym of
     SDL.KeycodeEscape -> Quit
-    SDL.KeycodeUp     -> SelectSurface Up
-    SDL.KeycodeDown   -> SelectSurface Down
-    SDL.KeycodeLeft   -> SelectSurface Left
-    SDL.KeycodeRight  -> SelectSurface Right
-    _                 -> SelectSurface Help
+    SDL.KeycodeUp     -> Render Up
+    SDL.KeycodeDown   -> Render Down
+    SDL.KeycodeLeft   -> Render Left
+    SDL.KeycodeRight  -> Render Right
+    _                 -> Render Help
 
 
-payloadToIntent :: SDL.EventPayload -> Intent
-payloadToIntent SDL.QuitEvent         = Quit
-payloadToIntent (SDL.KeyboardEvent k) = getKey k
-payloadToIntent _                     = Idle
+mapEventsToIntents :: [SDL.Event] -> [Intent]
+mapEventsToIntents = mapMaybe (payloadToIntent . SDL.eventPayload)
+  where
+    payloadToIntent :: SDL.EventPayload -> Maybe Intent
+    payloadToIntent (SDL.KeyboardEvent k) = getKey k
+    payloadToIntent SDL.QuitEvent         = Just Quit
+    payloadToIntent _                     = Nothing
 
 
-selectSurface :: Direction -> AssetMap a -> a
-selectSurface Help  = help
-selectSurface Up    = up
-selectSurface Down  = down
-selectSurface Left  = left
-selectSurface Right = right
-
-
-applyIntent :: (Monad m) => AssetMap a -> RenderFunction m a -> Intent -> m ()
-applyIntent _ _ Quit = pure ()
-applyIntent _ _ Idle = pure ()
-applyIntent cs f (SelectSurface key)
-  = f (selectSurface key cs)
-
-
-mapEventsToIntents :: [SDL.Event] -> [ Intent ]
-mapEventsToIntents = fmap (payloadToIntent . SDL.eventPayload)
-
-
-appLoop :: (MonadIO m) => AssetMap a -> RenderFunction m a -> m Bool
-appLoop assets doRender = do
+appLoop :: (MonadIO m) => RenderFunction m -> m Bool
+appLoop render = do
   xs <- mapEventsToIntents <$> SDL.pollEvents
 
   let shouldQuit = Quit `elem` xs
   if shouldQuit
       then pure False
       else do
-        applyIntent assets doRender `mapM_` xs
+        applyIntent `mapM_` xs
         pure True
+
+  where
+    applyIntent (Render key) = render key
+    applyIntent Quit                = pure ()
+
+
+draw :: (MonadIO m) => SDL.Window -> SDL.Surface -> AssetMap SDL.Surface -> RenderFunction m
+draw w screen assets d = do
+  let x = selectSurface d assets
+  C.renderSurfaceToWindow w screen x
+
+  where
+    selectSurface :: Direction -> AssetMap a -> a
+    selectSurface Help  = help
+    selectSurface Up    = up
+    selectSurface Down  = down
+    selectSurface Left  = left
+    selectSurface Right = right
 
 
 main :: IO ()
@@ -108,10 +110,10 @@ main = C.withSDL $ C.withWindow "Lesson 04" (640, 480) $
     screen <- SDL.getWindowSurface w
     assets <- mapM SDL.loadBMP surfacePaths
 
-    let doRender = C.renderSurfaceToWindow w screen
+    let doRender = draw w screen assets
 
-    doRender (help assets)
-    whileM $ appLoop assets doRender
+    doRender Help
+    whileM $ appLoop doRender
 
     mapM_ SDL.freeSurface assets
     SDL.freeSurface screen

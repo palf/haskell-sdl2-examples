@@ -10,6 +10,7 @@ import qualified SDL
 
 import           Control.Monad.Extra    (whileM)
 import           Control.Monad.IO.Class (MonadIO)
+import           Data.Functor
 import           Data.List.Extra
 import           Prelude                hiding (Left, Right)
 
@@ -24,7 +25,7 @@ data Direction
 
 
 data Intent
-  = SelectSurface Direction
+  = Render Direction
   | Quit
   deriving (Show, Eq)
 
@@ -38,7 +39,7 @@ data AssetMap a = AssetMap
   } deriving (Foldable, Traversable, Functor)
 
 
-type RenderFunction m a = (a -> m ())
+type RenderFunction m = (Direction -> m ())
 
 
 surfacePaths :: AssetMap FilePath
@@ -51,14 +52,6 @@ surfacePaths = AssetMap
   }
 
 
-selectSurface :: Direction -> AssetMap a -> a
-selectSurface Help  = help
-selectSurface Up    = up
-selectSurface Down  = down
-selectSurface Left  = left
-selectSurface Right = right
-
-
 readEventIntents :: (MonadIO m) => m (Maybe Intent)
 readEventIntents = firstJust payloadToIntent . fmap SDL.eventPayload <$> SDL.pollEvents
   where
@@ -67,42 +60,52 @@ readEventIntents = firstJust payloadToIntent . fmap SDL.eventPayload <$> SDL.pol
     payloadToIntent _             = Nothing
 
 
-applyIntent :: (Monad m) => AssetMap a -> RenderFunction m a -> Intent -> m ()
-applyIntent _ _ Quit = pure ()
-applyIntent cs render (SelectSurface key)
-  = render (selectSurface key cs)
-
-
-readKeyboardIntents :: (MonadIO m) => m [Intent]
-readKeyboardIntents = do
-  checkKey <- SDL.getKeyboardState
-
-  let scans =
-        [ ( SDL.ScancodeUp,  SelectSurface Up )
-        , ( SDL.ScancodeDown,  SelectSurface Down )
-        , ( SDL.ScancodeLeft,  SelectSurface Left )
-        , ( SDL.ScancodeRight,  SelectSurface Right )
+readKeyboardIntents :: (MonadIO m) => m Intent
+readKeyboardIntents = mapScansToIntents <$> SDL.getKeyboardState
+  where
+    scans =
+        [ ( SDL.ScancodeEscape, Quit )
+        , ( SDL.ScancodeUp, Render Up )
+        , ( SDL.ScancodeDown, Render Down )
+        , ( SDL.ScancodeLeft, Render Left )
+        , ( SDL.ScancodeRight, Render Right )
         ]
 
-  let ss = filter (\(s, _) -> checkKey s) scans  :: [( SDL.Scancode, Intent )]
+    mapScansToIntents checkKey =
+      case filter (checkKey . fst) scans of
+        [] -> Render Help
+        ts -> head $ snd <$> ts
 
-  pure $ case ss of
-           [] -> [SelectSurface Help]
-           ts -> snd <$> ts
 
-
-appLoop :: (MonadIO m) => AssetMap a -> RenderFunction m a -> m Bool
-appLoop assets doRender = do
+appLoop :: (MonadIO m) => RenderFunction m -> m Bool
+appLoop render = do
   xs <- readEventIntents
 
   case xs of
-    Just Quit -> pure False
+    Just Quit ->
+      pure False
 
     _ -> do
-
       ks <- readKeyboardIntents
-      applyIntent assets doRender `mapM_` ks
-      pure True
+      applyIntent ks
+
+  where
+    applyIntent (Render key) = render key $> True
+    applyIntent Quit         = pure False
+
+
+draw :: (MonadIO m) => SDL.Window -> SDL.Surface -> AssetMap SDL.Surface -> RenderFunction m
+draw w screen assets d = do
+  let x = selectSurface d assets
+  C.renderSurfaceToWindow w screen x
+
+  where
+    selectSurface :: Direction -> AssetMap a -> a
+    selectSurface Help  = help
+    selectSurface Up    = up
+    selectSurface Down  = down
+    selectSurface Left  = left
+    selectSurface Right = right
 
 
 main :: IO ()
@@ -112,10 +115,10 @@ main = C.withSDL $ C.withWindow "Lesson 18" (640, 480) $
     screen <- SDL.getWindowSurface w
     assets <- mapM SDL.loadBMP surfacePaths
 
-    let doRender = C.renderSurfaceToWindow w screen
+    let doRender = draw w screen assets
 
-    doRender (help assets)
-    whileM $ appLoop assets doRender
+    doRender Help
+    whileM $ appLoop doRender
 
     mapM_ SDL.freeSurface assets
     SDL.freeSurface screen
